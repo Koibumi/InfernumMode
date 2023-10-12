@@ -80,9 +80,15 @@ namespace InfernumMode.Content.Items.Misc
 
                 if (l.Text.StartsWith("ModifedInModifyTooltips"))
                 {
-                    l.Text = $"Hold LMB to teleport to the gate" +
+                    /*l.Text = $"Hold LMB to teleport to the gate" +
                     $"\nHold LMB and {KeybindSystem.WayfinderCreateKey.GetAssignedKeys().FirstOrDefault() ?? "[NONE]"} to set the gate to your position" +
-                    $"\nHold LMB and {KeybindSystem.WayfinderDestroyKey.GetAssignedKeys().FirstOrDefault() ?? "[NONE]"} to remove the gate";
+                    $"\nHold LMB and {KeybindSystem.WayfinderDestroyKey.GetAssignedKeys().FirstOrDefault() ?? "[NONE]"} to remove the gate";*/
+
+                    l.Text = Utilities.GetLocalization("Items.Wayfinder.TooltipEffect")
+                        .Format(
+                            KeybindSystem.WayfinderCreateKey.GetAssignedKeys().FirstOrDefault() ?? "[NONE]",
+                            KeybindSystem.WayfinderDestroyKey.GetAssignedKeys().FirstOrDefault() ?? "[NONE]"
+                        );
                     l.OverrideColor = mainColor;
                 }
             }
