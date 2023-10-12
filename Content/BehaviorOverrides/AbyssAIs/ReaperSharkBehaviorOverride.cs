@@ -81,7 +81,7 @@ namespace InfernumMode.Content.BehaviorOverrides.AbyssAIs
             }
 
             // Despawn if the player has left the final layer of the abyss.
-            if (!target.Calamity().ZoneAbyssLayer4)
+            if (!target.Calamity().ZoneAbyssLayer4 || target.dead)
             {
                 npc.velocity = Vector2.Lerp(npc.velocity, Vector2.UnitY * 27f, 0.1f);
                 if (!npc.WithinRange(target.Center, 1200f))

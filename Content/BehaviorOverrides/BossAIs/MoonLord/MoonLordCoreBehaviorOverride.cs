@@ -1,4 +1,4 @@
-﻿using CalamityMod;
+using CalamityMod;
 using CalamityMod.Buffs.DamageOverTime;
 using InfernumMode.Assets.Sounds;
 using InfernumMode.Content.Projectiles.Pets;
@@ -7,6 +7,8 @@ using InfernumMode.Content.WorldGeneration;
 using InfernumMode.Core;
 using InfernumMode.Core.GlobalInstances;
 using InfernumMode.Core.GlobalInstances.Systems;
+using InfernumMode.Core.Netcode;
+using InfernumMode.Core.Netcode.Packets;
 using InfernumMode.Core.OverridingSystem;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -19,6 +21,7 @@ using Terraria.GameContent;
 using Terraria.GameContent.Events;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.WorldBuilding;
 
 namespace InfernumMode.Content.BehaviorOverrides.BossAIs.MoonLord
 {
@@ -353,15 +356,20 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.MoonLord
 
         public static void HandleBodyPartDeathTriggers(NPC npc, double realDamage)
         {
+
             int minLife = (int)(npc.lifeMax * 0.18) + 1;
             if (npc.life - realDamage > minLife)
                 return;
-
-            npc.life = 0;
-
-            if (Main.netMode != NetmodeID.MultiplayerClient)
-                npc.StrikeInstantKill();
-            npc.checkDead();
+            //Server side never receives StrikeNPCEvent. if a client believes they killed a ML part the server will receive a packet telling it to run their own HandleBodyPartDeathStrigger.
+            if (Main.netMode == NetmodeID.MultiplayerClient)
+            {
+                PacketManager.SendPacket<SyncMoonlordPacket>(npc.whoAmI, realDamage);
+            }
+            else
+            {
+                npc.life = 0;
+                npc.checkDead();
+            }
         }
 
         public static void DoBehavior_SpawnEffects(NPC npc, ref float attackTimer)

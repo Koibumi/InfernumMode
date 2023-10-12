@@ -72,6 +72,16 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
         {
             if (!Owner.active)
             {
+                //Multiplayer client might not recognize its owner immediately. this gives it some time
+                if (Main.netMode == NetmodeID.MultiplayerClient)
+                {
+                    Projectile.timeLeft -= 50;
+                    if (Projectile.timeLeft < 50)
+                    {
+                        Projectile.Kill();
+                    }
+                    return;
+                }
                 Projectile.Kill();
                 return;
             }

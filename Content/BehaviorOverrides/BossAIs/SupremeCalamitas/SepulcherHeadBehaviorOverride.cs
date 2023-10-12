@@ -1,4 +1,4 @@
-﻿using CalamityMod;
+using CalamityMod;
 using CalamityMod.Buffs.StatDebuffs;
 using CalamityMod.Items.Weapons.Ranged;
 using CalamityMod.NPCs.SupremeCalamitas;
@@ -83,6 +83,12 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.SupremeCalamitas
 
             // No.
             npc.scale = 1.25f;
+            //Multiplayer clients by chance will miss the end of the AttackDelay phase due to bad netUpdate timing.
+            if(Main.netMode == NetmodeID.MultiplayerClient && (SepulcherAttackType)attackState != SepulcherAttackType.AttackDelay)
+            {
+                npc.dontTakeDamage = false;
+                npc.Opacity = 1f;
+            }
 
             if (Main.netMode != NetmodeID.MultiplayerClient && hasSummonedSegments == 0f)
             {
