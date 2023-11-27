@@ -1,6 +1,5 @@
-using CalamityMod.NPCs;
-using CalamityMod.Particles.Metaballs;
-using InfernumMode.Common.Graphics.Metaballs.CalMetaballs;
+﻿using CalamityMod.NPCs;
+using InfernumMode.Common.Graphics.Metaballs;
 using Microsoft.Xna.Framework;
 using Terraria;
 using Terraria.ID;
@@ -54,7 +53,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
             Time++;
 
             // Create blob particles.
-            FusableParticleManager.GetParticleSetByType<ShadowDemonParticleSet>()?.SpawnParticle(Projectile.Center + Main.rand.NextVector2Circular(12f, 12f), (20f + Projectile.velocity.Length()) * Projectile.scale);
+            ModContent.GetInstance<ShadowMetaball>().SpawnParticle(Projectile.Center + Main.rand.NextVector2Circular(12f, 12f), Vector2.Zero, new((20f + Projectile.velocity.Length()) * Projectile.scale));
         }
 
         public override bool PreDraw(ref Color lightColor) => false;

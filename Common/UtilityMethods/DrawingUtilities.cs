@@ -3,10 +3,11 @@ using CalamityMod.DataStructures;
 using CalamityMod.Particles;
 using InfernumMode.Assets.ExtraTextures;
 using InfernumMode.Assets.Sounds;
-using InfernumMode.Common;
 using InfernumMode.Common.BaseEntities;
 using InfernumMode.Common.Graphics;
+using InfernumMode.Common.Graphics.Metaballs;
 using InfernumMode.Common.Graphics.Primitives;
+using InfernumMode.Common.MapLayers;
 using InfernumMode.Content.Projectiles.Generic;
 using InfernumMode.Core;
 using Microsoft.Xna.Framework;
@@ -25,7 +26,6 @@ using Terraria.Graphics.Shaders;
 using Terraria.ID;
 using Terraria.Map;
 using Terraria.ModLoader;
-using static CalamityMod.Particles.Metaballs.BaseFusableParticleSet;
 
 namespace InfernumMode
 {
@@ -437,6 +437,10 @@ namespace InfernumMode
         {
             DeleteAllProjectiles(false, ModContent.ProjectileType<ScreenShakeProj>());
 
+            // Don't bother spawning on low graphics mode.
+            if (InfernumConfig.Instance.ReducedGraphicsConfig)
+                return;
+
             if (playSound)
                 SoundEngine.PlaySound(InfernumSoundRegistry.SonicBoomSound, Vector2.Lerp(shockwavePosition, Main.LocalPlayer.Center, 0.84f));
 
@@ -525,7 +529,7 @@ namespace InfernumMode
             {
                 float colorInterpolant = (float)(Math.Sin(Pi * Main.GlobalTimeWrappedHourly + 1f) * 0.5) + 0.5f;
                 Color c = CalamityUtils.MulticolorLerp(colorInterpolant, new Color(170, 0, 0, 255), Color.OrangeRed, new Color(255, 200, 0, 255));
-                return CalamityUtils.ColorMessage("Imbued with the infernal flames of a defeated foe", c);
+                return CalamityUtils.ColorMessage(GetLocalization("Items.InfernalRelicText").Value, c);
             }
         }
 
@@ -549,11 +553,38 @@ namespace InfernumMode
             graphicsDevice.Clear(flushColor.Value);
         }
 
-        public static void CreateMetaballsFromTexture(this Texture2D texture, ref List<FusableParticle> particleList, Vector2 texturePosition, float textureRotation, float textureScale, float metaballSize, int spawnChance = 35)
+        /// <summary>
+        /// Creates a list of <see cref="InfernumMetaballParticle"/> from a given texture shape and color information.
+        /// </summary>
+        /// <param name="texture">The texture to use</param>
+        /// <param name="texturePosition">The world postition of the texture</param>
+        /// <param name="textureRotation">The rotation of the texture</param>
+        /// <param name="textureScale">The scale of the texture</param>
+        /// <param name="metaballSize">The base size of the metaballs</param>
+        /// <param name="spawnChance">The chance that a pixel will create a metaball</param>
+        /// <returns></returns>
+        public static IEnumerable<InfernumMetaballParticle> CreateMetaballsFromTexture(this Texture2D texture, Vector2 texturePosition, float textureRotation, float textureScale, float metaballSize, int spawnChance = 35)
         {
+            List<InfernumMetaballParticle> metaballs = new();
             // Leave if this is null, or this is called on the server.
-            if (particleList is null || Main.netMode == NetmodeID.Server)
-                return;
+            if (Main.netMode == NetmodeID.Server)
+                return metaballs;
+
+            // If on low detail mode, just give a bunch of random metaballs from the texture size to save on performance.
+            if (InfernumConfig.Instance.ReducedGraphicsConfig)
+            {
+                Vector2 actualSize = texture.Size() * textureScale;
+                int metaballCount = (int)(actualSize.X * actualSize.Y) / 2;
+                for (int i = 0; i < metaballCount; i++)
+                {
+                    if (Main.rand.NextBool(spawnChance))
+                    {
+                        InfernumMetaballParticle particle = new(Main.rand.NextVector2FromRectangle(new((int)texturePosition.X, (int)texturePosition.Y, (int)actualSize.X, (int)actualSize.Y)), Vector2.Zero, new(Main.rand.NextFloat(metaballSize * 0.8f, metaballSize * 1.2f)));
+                        metaballs.Add(particle);
+                    }
+                }
+                return metaballs;
+            }
 
             // Get the dimensions of the texture.
             int textureWidth = texture.Width;
@@ -575,11 +606,12 @@ namespace InfernumMode
                     {
                         Vector2 positionOffset = textureScale * new Vector2(textureWidth * 0.5f, textureHeight * 0.5f).RotatedBy(textureRotation);
                         Vector2 metaballSpawnPosition = texturePosition - positionOffset + new Vector2(w, h).RotatedBy(textureRotation);
-                        FusableParticle particle = new(metaballSpawnPosition, Main.rand.NextFloat(metaballSize * 0.8f, metaballSize * 1.2f) * color.A / 255);
-                        particleList.Add(particle);
+                        InfernumMetaballParticle particle = new(metaballSpawnPosition, Vector2.Zero, new Vector2(Main.rand.NextFloat(metaballSize * 0.8f, metaballSize * 1.2f)) * color.A / 255);
+                        metaballs.Add(particle);
                     }
                 }
             }
+            return metaballs;
         }
 
         public static void DrawBloomLineTelegraph(Vector2 drawPosition, BloomLineDrawInfo drawInfo, bool resetSpritebatch = true, Vector2? resolution = null)
@@ -636,5 +668,8 @@ namespace InfernumMode
         public static void SetTexture1(this Texture2D texture) => Main.instance.GraphicsDevice.Textures[1] = texture;
 
         public static void SetTexture2(this Texture2D texture) => Main.instance.GraphicsDevice.Textures[2] = texture;
+
+        public static void SetTexture3(this Texture2D texture) => Main.instance.GraphicsDevice.Textures[3] = texture;
+
     }
 }
