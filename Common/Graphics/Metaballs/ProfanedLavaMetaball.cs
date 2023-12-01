@@ -13,7 +13,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace InfernumMode.Common.Graphics.Metaballs.CalMetaballs
+namespace InfernumMode.Common.Graphics.Metaballs
 {
     public class ProfanedLavaMetaball : Metaball
     {
@@ -41,13 +41,13 @@ namespace InfernumMode.Common.Graphics.Metaballs.CalMetaballs
             {
                 Color dayColor = Color.Lerp(WayfinderSymbol.Colors[0], WayfinderSymbol.Colors[2], 0.2f);
                 if (NPC.AnyNPCs(ModContent.NPCType<Providence>()))
-                    return ProvidenceBehaviorOverride.IsEnraged ? Color.DeepSkyBlue: dayColor;
+                    return ProvidenceBehaviorOverride.IsEnraged ? Color.DeepSkyBlue : dayColor;
 
                 return dayColor;
             }
         }
 
-    public void SpawnParticle(Vector2 center, Vector2 velocity, Vector2 size, float decayRate = 0.985f)
+        public void SpawnParticle(Vector2 center, Vector2 velocity, Vector2 size, float decayRate = 0.985f)
         {
             if (Main.netMode != NetmodeID.Server)
                 Particles.Add(new(center, velocity, size, decayRate));

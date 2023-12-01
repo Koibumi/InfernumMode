@@ -15,7 +15,7 @@ using System.IO;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
-using InfernumMode.Core.ModCalls;
+using InfernumMode.Core.CrossCompatibility;
 
 namespace InfernumMode
 {

@@ -9,7 +9,7 @@ using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
 
-namespace InfernumMode.Common.Graphics.Metaballs.CalMetaballs
+namespace InfernumMode.Common.Graphics.Metaballs
 {
     public class ShadowMetaball : Metaball
     {

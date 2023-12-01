@@ -2,7 +2,7 @@
 using CalamityMod.NPCs;
 using CalamityMod.Particles;
 using InfernumMode.Assets.Sounds;
-using InfernumMode.Common.Graphics.Metaballs.CalMetaballs;
+using InfernumMode.Common.Graphics.Metaballs;
 using InfernumMode.Common.Graphics.Particles;
 using InfernumMode.Common.Graphics.ScreenEffects;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.Providence;
