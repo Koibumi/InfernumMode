@@ -55,20 +55,20 @@ namespace InfernumMode.Content.Items.Misc
             Vector2 drawOffset = Vector2.UnitY * yOffset;
             if (line.Text.StartsWith("You feel"))
             {                
-                drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref spiritSparkles, "You feel a ");
-                drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref spiritSparkles, "guiding spirit", true);
-                drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref spiritSparkles, " trying to lead you the bloom’s home");
+                drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref spiritSparkles, Utilities.GetLocalization("Items.SakuraBud.TooltipEffect.FirstText").Value);
+                drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref spiritSparkles, Utilities.GetLocalization("Items.SakuraBud.TooltipEffect.SecondText").Value, true);
+                drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref spiritSparkles, Utilities.GetLocalization("Items.SakuraBud.TooltipEffect.ThirdText").Value);
                 return false;
             }
             if (line.Text.StartsWith("Maybe you"))
             {
                 if (Main.LocalPlayer.WithinRange(WorldSaveSystem.BlossomGardenCenter.ToWorldCoordinates(), 3200f))
                 {
-                    drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref waterSparkles, "The spirit is trying to draw your attention to the ");
-                    drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref waterSparkles, "water", true, overrideColor: new(26, 169, 208));
+                    drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref waterSparkles, Utilities.GetLocalization("Items.SakuraBud.TooltipEffect.FourthText").Value);
+                    drawOffset.X += SakuraBloom.DrawLine(line, drawOffset, ref waterSparkles, Utilities.GetLocalization("Items.SakuraBud.TooltipEffect.FifthText").Value, true, overrideColor: new(26, 169, 208));
                 }
                 else
-                    SakuraBloom.DrawLine(line, drawOffset, ref waterSparkles, "Maybe you should follow its call?");
+                    SakuraBloom.DrawLine(line, drawOffset, ref waterSparkles, Utilities.GetLocalization("Items.SakuraBud.TooltipEffect.SixthText").Value);
 
                 return false;            
             }

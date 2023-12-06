@@ -85,12 +85,16 @@ namespace InfernumMode.Content.BehaviorOverrides.AbyssAIs
                 for (int i = 0; i < LightningCount; i++)
                 {
                     Vector2 lightningVelocity = (Lerp(-LightningSpread, LightningSpread, i / (float)(LightningCount - 1f)) + TelegraphDirection).ToRotationVector2() * 13f;
-                    int lightning = Utilities.NewProjectileBetter(Projectile.Center, lightningVelocity, lightningID, 175, 0f);
-                    if (Main.projectile.IndexInRange(lightning))
-                    {
-                        Main.projectile[lightning].ai[0] = lightningVelocity.ToRotation();
-                        Main.projectile[lightning].ai[1] = Main.rand.Next(100);
-                    }
+                    float InitialVelocityAngle = lightningVelocity.ToRotation();
+                    float BaseTurnAngleRatio = Main.rand.Next(100);
+                    int lightning = Utilities.NewProjectileBetter(Projectile.Center, lightningVelocity, lightningID, 175, 0f, -1, InitialVelocityAngle, BaseTurnAngleRatio);
+                    //This does not work in multiplayer.
+                    //if (Main.projectile.IndexInRange(lightning))
+                    //{
+                    //    Main.projectile[lightning].ai[0] = lightningVelocity.ToRotation();
+                    //    Main.projectile[lightning].ai[1] = Main.rand.Next(100);
+                    //    ModContent.GetInstance<InfernumMode>().Logger.Debug("Spawning lightning with turnratio: " + Main.projectile[lightning].ai[1].ToString());
+                    //}
                 }
             }
         }

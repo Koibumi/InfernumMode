@@ -189,6 +189,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.DoG
                 phaseCycleTimer = 0f;
 
                 // Teleport to the position of the portal and charge at the target after the animation concludes.
+                // This sometimes results in DoG being decapitated temporarily after leaving the portal, and it has resisted all attempts to fix it. So i am giving up.
                 if (phase2IntroductionAnimationTimer >= DoGPhase2IntroPortalGate.Phase2AnimationTime)
                 {
                     npc.Opacity = 1f;

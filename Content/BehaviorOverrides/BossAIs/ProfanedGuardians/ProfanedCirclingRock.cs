@@ -39,8 +39,21 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
         {
             if (!Owner.active || Owner.type != ModContent.NPCType<ProfanedGuardianDefender>())
             {
-                Projectile.Kill();
-                return;
+                //Multiplayer client might not recognize its owner immediately. this gives it some time
+                if (Main.netMode == NetmodeID.MultiplayerClient)
+                {
+                    Projectile.timeLeft -= 50;
+                    if (Projectile.timeLeft < 50)
+                    {
+                        Projectile.Kill();
+                    }
+                    return;
+                }
+                else
+                {
+                    Projectile.Kill();
+                    return;
+                }
             }
 
             if (Projectile.localAI[1] == 0f)
