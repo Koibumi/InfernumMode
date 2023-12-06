@@ -1,4 +1,7 @@
-﻿# V 1.9.32 Changelogs
+﻿# V 1.9.33 + V 1.9.34 Changelogs
+- tModLoader stable ports.
+
+# V 1.9.32 Changelogs
 - Added missing localisation.
 
 # V 1.9.31 Changelogs

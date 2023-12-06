@@ -1,7 +1,6 @@
-﻿using CalamityMod.Particles.Metaballs;
-using InfernumMode.Assets.Effects;
+﻿using InfernumMode.Assets.Effects;
 using InfernumMode.Assets.ExtraTextures;
-using InfernumMode.Common.Graphics.Metaballs.CalMetaballs;
+using InfernumMode.Common.Graphics.Metaballs;
 using InfernumMode.Content.Projectiles.Wayfinder;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -85,8 +84,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
             if (SpearRift)
             {
                 for (int i = 0; i < 3; i++)
-                    FusableParticleManager.GetParticleSetByType<ProfanedLavaParticleSet>()?.SpawnParticle(Projectile.Center +
-                        Main.rand.NextVector2Circular(RiftSize.X, RiftSize.Y), Main.rand.NextFloat(BallSize * 0.75f, BallSize));
+                    ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticle(Projectile.Center +
+                        Main.rand.NextVector2Circular(RiftSize.X, RiftSize.Y), Vector2.Zero, new(Main.rand.NextFloat(BallSize * 0.75f, BallSize)));
             }
         }
 

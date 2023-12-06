@@ -1,9 +1,8 @@
 ﻿using CalamityMod;
 using CalamityMod.NPCs;
 using CalamityMod.Particles;
-using CalamityMod.Particles.Metaballs;
 using InfernumMode.Assets.Sounds;
-using InfernumMode.Common.Graphics.Metaballs.CalMetaballs;
+using InfernumMode.Common.Graphics.Metaballs;
 using InfernumMode.Common.Graphics.Particles;
 using InfernumMode.Common.Graphics.ScreenEffects;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.Providence;
@@ -1360,8 +1359,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                         {
                             // Bias towards lower values. 
                             float size = Pow(Main.rand.NextFloat(), 2f);
-                            FusableParticleManager.GetParticleSetByType<ProfanedLavaParticleSet>()?.SpawnParticle(npc.Center - (npc.velocity * 0.5f) + (Main.rand.NextVector2Circular(npc.width * 0.5f, npc.height * 0.5f) * size),
-                                Main.rand.NextFloat(15f, 20f));
+                            ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticle(npc.Center - (npc.velocity * 0.5f) + (Main.rand.NextVector2Circular(npc.width * 0.5f, npc.height * 0.5f) * size),
+                                Vector2.Zero, new(Main.rand.NextFloat(15f, 20f)));
                         }
 
                         if (npc.WithinRange(defender.Center, 230f) || universalAttackTimer >= 240f)
@@ -1519,8 +1518,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                         for (int i = 0; i < 30; i++)
                         {
                             float size = Pow(Main.rand.NextFloat(), 2f);
-                            FusableParticleManager.GetParticleSetByType<ProfanedLavaParticleSet>()?.SpawnParticle(npc.Center - (npc.velocity * 0.5f) + (Main.rand.NextVector2Circular(npc.width * 0.5f, npc.height * 0.5f) * size),
-                                Main.rand.NextFloat(15f, 20f));
+                            ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticle(npc.Center - (npc.velocity * 0.5f) + (Main.rand.NextVector2Circular(npc.width * 0.5f, npc.height * 0.5f) * size),
+                                Vector2.Zero, new(Main.rand.NextFloat(15f, 20f)));
                         }
                         break;
                 }
@@ -2322,8 +2321,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     {
                         // Bias towards lower values. 
                         float size = Pow(Main.rand.NextFloat(), 2f);
-                        FusableParticleManager.GetParticleSetByType<ProfanedLavaParticleSet>()?.SpawnParticle(npc.Center - (npc.velocity * 0.5f) + (Main.rand.NextVector2Circular(npc.width * 0.5f, npc.height * 0.5f) * size),
-                            Main.rand.NextFloat(25f, 35f));
+                        ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticle(npc.Center - (npc.velocity * 0.5f) + (Main.rand.NextVector2Circular(npc.width * 0.5f, npc.height * 0.5f) * size), Vector2.Zero, new(Main.rand.NextFloat(25f, 35f)));
                     }
 
                     drawDashTelegraph = 0f;
@@ -2381,7 +2379,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
 
 
                         for (int i = 0; i < 70; i++)
-                            FusableParticleManager.GetParticleSetByType<ProfanedLavaParticleSet>()?.SpawnParticle(npc.Center + Main.rand.NextVector2Circular(150f, 150f), Main.rand.NextFloat(52f, 85f));
+                            ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticle(npc.Center + Main.rand.NextVector2Circular(150f, 150f), Vector2.Zero, new(Main.rand.NextFloat(52f, 85f)));
 
                         // Spawn crosses/rocks.
                         if (Main.netMode != NetmodeID.MultiplayerClient)
@@ -2718,7 +2716,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     {
                         Vector2 spearTip = npc.Center + spearRotation.ToRotationVector2() * (120f * 1.5f);
                         for (int i = 0; i < 100; i++)
-                            FusableParticleManager.GetParticleSetByType<ProfanedLavaParticleSet>()?.SpawnParticle(spearTip + Main.rand.NextVector2Circular(50f, 50f), Main.rand.NextFloat(52f, 85f));
+                            ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticle(spearTip + Main.rand.NextVector2Circular(50f, 50f), Vector2.Zero, new(Main.rand.NextFloat(52f, 85f)));
 
                         spearPosOffset = 0f;
                         spearStatus = (float)DefenderShieldStatus.MarkedForRemoval;
@@ -2732,7 +2730,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     {
                         Vector2 spawnPosition = new Vector2(exitPosX, exitPosY) + target.Center;
                         for (int i = 0; i < 100; i++)
-                            FusableParticleManager.GetParticleSetByType<ProfanedLavaParticleSet>()?.SpawnParticle(spawnPosition + Main.rand.NextVector2Circular(75f, 75f), Main.rand.NextFloat(52f, 85f));
+                            ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticle(spawnPosition + Main.rand.NextVector2Circular(75f, 75f), Vector2.Zero, new(Main.rand.NextFloat(52f, 85f)));
 
                         SoundEngine.PlaySound(InfernumSoundRegistry.ProvidenceBurnSound, target.Center);
                         SoundEngine.PlaySound(SoundID.DD2_LightningBugZap, target.Center);

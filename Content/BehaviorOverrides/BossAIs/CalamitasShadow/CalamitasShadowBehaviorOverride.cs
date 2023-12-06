@@ -4,14 +4,13 @@ using CalamityMod.Items.Weapons.Ranged;
 using CalamityMod.NPCs;
 using CalamityMod.NPCs.CalClone;
 using CalamityMod.Particles;
-using CalamityMod.Particles.Metaballs;
 using CalamityMod.UI.CalamitasEnchants;
 using InfernumMode.Assets.Effects;
 using InfernumMode.Assets.ExtraTextures;
 using InfernumMode.Assets.Sounds;
 using InfernumMode.Common.Graphics;
 using InfernumMode.Common.Graphics.AttemptRecording;
-using InfernumMode.Common.Graphics.Metaballs.CalMetaballs;
+using InfernumMode.Common.Graphics.Metaballs;
 using InfernumMode.Common.Graphics.Particles;
 using InfernumMode.Common.Graphics.Primitives;
 using InfernumMode.Common.Graphics.ScreenEffects;
@@ -824,8 +823,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
                 float jitterInterpolant = Utils.GetLerpValue(0f, jitterTime, attackTimer, true);
                 npc.Center += Main.rand.NextVector2Circular(3f, 3f) * jitterInterpolant;
                 npc.Opacity = Lerp(1f, 0.5f, jitterInterpolant);
-
-                FusableParticleManager.GetParticleSetByType<ShadowDemonParticleSet>()?.SpawnParticle(target.Center + teleportOffsetAngle.ToRotationVector2() * teleportOffset + Main.rand.NextVector2Circular(20f, 20f), Main.rand.NextFloat(96f, 105f));
+                ModContent.GetInstance<ShadowMetaball>().SpawnParticle(target.Center + teleportOffsetAngle.ToRotationVector2() * teleportOffset + Main.rand.NextVector2Circular(20f, 20f), Vector2.Zero, new(Main.rand.NextFloat(96f, 105f)));
             }
 
             if (attackTimer >= jitterTime)
@@ -856,7 +854,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
                     if (Main.netMode != NetmodeID.Server)
                     {
                         var shadowTexture = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/CalamitasShadow/CalamitasShadowSingleFrame", AssetRequestMode.ImmediateLoad).Value;
-                        shadowTexture.CreateMetaballsFromTexture(ref FusableParticleManager.GetParticleSetByType<ShadowDemonParticleSet>().Particles, npc.Center, npc.rotation, npc.scale, 28f, 10);
+                        ModContent.GetInstance<ShadowMetaball>().SpawnParticles(shadowTexture.CreateMetaballsFromTexture(npc.Center, npc.rotation, npc.scale, 28f, 10));
                     }
 
                     if (Main.netMode != NetmodeID.MultiplayerClient)
@@ -1357,7 +1355,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
                 if (Main.netMode != NetmodeID.Server)
                 {
                     var shadowTexture = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/CalamitasShadow/CalamitasShadowSingleFrame", AssetRequestMode.ImmediateLoad).Value;
-                    shadowTexture.CreateMetaballsFromTexture(ref FusableParticleManager.GetParticleSetByType<ShadowDemonParticleSet>().Particles, npc.Center, npc.rotation, npc.scale, 18f, 10);
+                    ModContent.GetInstance<ShadowMetaball>().SpawnParticles(shadowTexture.CreateMetaballsFromTexture(npc.Center, npc.rotation, npc.scale, 18f, 10));
                 }
 
                 // Summon Catatrophe and Cataclysm.
@@ -1771,7 +1769,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
                 if (Main.netMode != NetmodeID.Server)
                 {
                     var shadowTexture = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/CalamitasShadow/CalamitasShadowSingleFrame", AssetRequestMode.ImmediateLoad).Value;
-                    shadowTexture.CreateMetaballsFromTexture(ref FusableParticleManager.GetParticleSetByType<ShadowDemonParticleSet>().Particles, npc.Center, npc.rotation, npc.scale, 40f, 10);
+                    ModContent.GetInstance<ShadowMetaball>().SpawnParticles(shadowTexture.CreateMetaballsFromTexture(npc.Center, npc.rotation, npc.scale, 40f, 10));
                 }
                 for (int i = 0; i < 35; i++)
                 {
