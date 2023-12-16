@@ -7,4 +7,4 @@ The primary focus of the mod is expansive reworking of boss AIs.
 
 Some bosses gain extra phases for maximum "It's not over yet!" energy.
 
-Please report any bugs/issues via the Bug-Reports forum on the discord server.
+Please report any bugs/issues via the Bug-Reports forum on the [discord server](https://discord.gg/S9duFWAnzD).
