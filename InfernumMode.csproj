@@ -23,12 +23,14 @@
     <PackageReference Include="tModLoader.CodeAssist" Version="0.1.*" />
   </ItemGroup>
   <ItemGroup>
+    <!--Clone/Fork the calamity repo locally into your modsource folder to make this match.-->
     <Reference Include="CalamityMod">
-      <HintPath>C:\ModReader\CalamityMod\CalamityMod.dll</HintPath>
+      <HintPath>..\CalamityMod\bin\Debug\net6.0\CalamityMod.dll</HintPath>
     </Reference>
     <Reference Include="Gif.Components">
       <HintPath>lib\Gif.dll</HintPath>
     </Reference>
+    <!--Put this wherever you feel like.-->
     <Reference Include="SubworldLibrary">
       <HintPath>E:\Downloads\SubworldLibrary\SubworldLibrary.dll</HintPath>
     </Reference>
