@@ -85,7 +85,7 @@ namespace InfernumMode.Content.Tiles.Profaned
 
             if (!GuardiansPlaqueUIManager.ShouldDraw)
             {
-                Main.LocalPlayer.cursorItemIconText = Utilities.GetLocalization("UI.GuardiansPlaqueUI.HoverText").Value;
+                Main.LocalPlayer.cursorItemIconText = "Read";
                 Main.instance.MouseTextHackZoom(Main.LocalPlayer.cursorItemIconText);
             }
         }

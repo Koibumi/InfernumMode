@@ -315,7 +315,7 @@ namespace InfernumMode.Content.Projectiles
             }
 
             // Hurt the player.
-            var hurtReason = PlayerDeathReason.ByCustomReason(Utilities.GetLocalization("Status.Death.HyperplaneMatrixExplosion").Format(Owner.name));
+            var hurtReason = PlayerDeathReason.ByCustomReason($"{Owner.name} was blown up.");
             Owner.Hurt(hurtReason, HyperplaneMatrix.UnableToBeUsedHurtDamage, 0);
 
             // Destroy the matrix.

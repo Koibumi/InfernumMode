@@ -60,8 +60,7 @@ namespace InfernumMode.Core.GlobalInstances.Systems
                     ExoMechSelectionUI.HoverSoundMechType = null;
 
                 var font = FontAssets.MouseText.Value;
-                //string pickTwoText = "Pick two. The first mech will be fought alone. Once sufficiently damaged, the second mech will be summoned and the two will fight together.";
-                string pickTwoText = Utilities.GetLocalization("ExoMechsFight.PickTwoText").Value;
+                string pickTwoText = "Pick two. The first mech will be fought alone. Once sufficiently damaged, the second mech will be summoned and the two will fight together.";
                 Vector2 pickToDrawPosition = baseDrawPosition - Vector2.UnitY * 250f;
                 foreach (string line in Utils.WordwrapString(pickTwoText, font, 600, 10, out _))
                 {
@@ -92,20 +91,20 @@ namespace InfernumMode.Core.GlobalInstances.Systems
                 case 1:
                     iconScale = ExoMechSelectionUI.DestroyerIconScale;
                     iconMechTexture = ModContent.Request<Texture2D>("CalamityMod/UI/DraedonSummoning/HeadIcon_THanos").Value;
-                    description = Utilities.GetLocalization("ExoMechsFight.ThanatosDesc").Value;
+                    description = "Thanatos, a serpentine terror with impervious armor and innumerable laser turrets.";
                     hoverSound = ExoMechSelectionUI.ThanatosHoverSound;
                     break;
                 case 2:
                     iconScale = ExoMechSelectionUI.PrimeIconScale;
                     iconMechTexture = ModContent.Request<Texture2D>("CalamityMod/UI/DraedonSummoning/HeadIcon_Ares").Value;
-                    description = Utilities.GetLocalization("ExoMechsFight.AresDesc").Value;
+                    description = "Ares, a heavyweight, diabolical monstrosity with six Exo superweapons.";
                     hoverSound = ExoMechSelectionUI.AresHoverSound;
                     break;
                 case 3:
                 default:
                     iconScale = ExoMechSelectionUI.TwinsIconScale;
                     iconMechTexture = ModContent.Request<Texture2D>("CalamityMod/UI/DraedonSummoning/HeadIcon_ArtemisApollo").Value;
-                    description = Utilities.GetLocalization("ExoMechsFight.ArtemisApolloDesc").Value;
+                    description = "Artemis and Apollo, a pair of extremely agile destroyers with unstable energy reserves.";
                     hoverSound = ExoMechSelectionUI.TwinsHoverSound;
                     break;
             }

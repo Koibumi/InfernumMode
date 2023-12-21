@@ -5,10 +5,8 @@ using CalamityMod.Systems;
 using InfernumMode.Assets.Effects;
 using InfernumMode.Common.Graphics.Primitives;
 using InfernumMode.Content.BossBars;
-using InfernumMode.Content.BossIntroScreens;
 using InfernumMode.Content.UI;
 using InfernumMode.Core.Balancing;
-using InfernumMode.Core.CrossCompatibility;
 using InfernumMode.Core.GlobalInstances.Systems;
 using InfernumMode.Core.ILEditingStuff;
 using InfernumMode.Core.Netcode;
@@ -17,7 +15,7 @@ using System.IO;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
-using static CalamityMod.Particles.Metaballs.FusableParticleManager;
+using InfernumMode.Core.CrossCompatibility;
 
 namespace InfernumMode
 {
@@ -99,7 +97,6 @@ namespace InfernumMode
                     method.GetCustomAttributes(false);
             }
 
-            IntroScreenManager.Load();
             NPCBehaviorOverride.LoadAll();
             ProjectileBehaviorOverride.LoadAll();
             BossBarManager.LoadPhaseInfo();
@@ -137,13 +134,6 @@ namespace InfernumMode
                 Main.QueueMainThreadAction(() =>
                 {
                     CalamityMod.Call("LoadParticleInstances", this);
-                    ParticleSets = new();
-                    ParticleSetTypes = new();
-                    HasBeenFormallyDefined = true;
-
-                    FindParticleSetTypesInMod(CalamityMod, Main.screenWidth, Main.screenHeight);
-                    foreach (Mod m in ExtraModsToLoadSetsFrom)
-                        FindParticleSetTypesInMod(m, Main.screenWidth, Main.screenHeight);
                 });
             }
 
@@ -161,14 +151,10 @@ namespace InfernumMode
 
         public override void HandlePacket(BinaryReader reader, int whoAmI) => PacketManager.ReceivePacket(reader);
 
-        public override object Call(params object[] args)
-        {
-            return InfernumModCalls.Call(args);
-        }
+        public override object Call(params object[] args) => InfernumModCalls.Call(args);
 
         public override void Unload()
         {
-            IntroScreenManager.Unload();
             BalancingChangesManager.Unload();
             HookManager.Unload();
 
@@ -177,6 +163,7 @@ namespace InfernumMode
                 PrimitiveTrailCopy.Dispose();
                 Primitive3DStrip.Dispose();
             });
+
             Instance = null;
             CalamityMod = null;
         }

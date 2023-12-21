@@ -1,4 +1,4 @@
-using CalamityMod.Events;
+﻿using CalamityMod.Events;
 using InfernumMode.Core;
 using System;
 using System.Collections.Generic;
@@ -6,10 +6,11 @@ using System.Linq;
 using System.Runtime.Serialization;
 using Terraria;
 using Terraria.ID;
+using Terraria.ModLoader;
 
 namespace InfernumMode.Content.BossIntroScreens
 {
-    public static class IntroScreenManager
+    public class IntroScreenManager : ModSystem
     {
         internal static List<BaseIntroScreen> IntroScreens = new();
 
@@ -27,14 +28,14 @@ namespace InfernumMode.Content.BossIntroScreens
             }
         }
 
-        internal static void Load()
+        public override void OnModLoad()
         {
             IntroScreens = new List<BaseIntroScreen>();
             foreach (Type introScreen in InfernumMode.Instance.Code.GetTypes().Where(t => !t.IsAbstract && t.IsSubclassOf(typeof(BaseIntroScreen))))
                 IntroScreens.Add(FormatterServices.GetUninitializedObject(introScreen) as BaseIntroScreen);
         }
 
-        internal static void Unload()
+        public override void Unload()
         {
             IntroScreens = null;
         }

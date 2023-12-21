@@ -69,11 +69,11 @@ namespace InfernumMode.Core.GlobalInstances.Players
             if (damage == 10.0 && hitDirection == 0 && damageSource.SourceOtherIndex == 8)
             {
                 if (RedElectrified)
-                    damageSource = PlayerDeathReason.ByCustomReason(Utilities.GetLocalization("Status.Death.RedElectrified").Format(Player.name));
+                    damageSource = PlayerDeathReason.ByCustomReason($"{Player.name} could not withstand the red lightning.");
                 if (DarkFlames)
-                    damageSource = PlayerDeathReason.ByCustomReason(Utilities.GetLocalization("Status.Death.DarkFlames").Format(Player.name));
+                    damageSource = PlayerDeathReason.ByCustomReason($"{Player.name} was incinerated by ungodly fire.");
                 if (Madness)
-                    damageSource = PlayerDeathReason.ByCustomReason(Utilities.GetLocalization("Status.Death.Madness").Format(Player.name));
+                    damageSource = PlayerDeathReason.ByCustomReason($"{Player.name} went mad.");
             }
             return true;
         }

@@ -186,11 +186,11 @@ namespace InfernumMode.Core.GlobalInstances
                 return;
 
             if (npc.type == ModContent.NPCType<CalamitasClone>())
-                typeName = Utilities.GetLocalization("NameOverrides.CalamitasShadowClone.EntryName").Format(CalamitasShadowBehaviorOverride.CustomName);
+                typeName = $"The {CalamitasShadowBehaviorOverride.CustomName}";
             if (npc.type == ModContent.NPCType<Cataclysm>())
-                typeName = CalamitasShadowBehaviorOverride.CustomNameCataclysm.Value;
+                typeName = CalamitasShadowBehaviorOverride.CustomNameCataclysm;
             if (npc.type == ModContent.NPCType<Catastrophe>())
-                typeName = CalamitasShadowBehaviorOverride.CustomNameCatastrophe.Value;
+                typeName = CalamitasShadowBehaviorOverride.CustomNameCatastrophe;
         }
         #endregion Name Manipulation
     }

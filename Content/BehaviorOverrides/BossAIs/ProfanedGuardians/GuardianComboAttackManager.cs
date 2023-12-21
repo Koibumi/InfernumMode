@@ -480,7 +480,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
 
                         hoverOffsetX = hoverOffset.X;
                         hoverOffsetY = hoverOffset.Y;
-                        npc.netUpdate = true;
                         universalAttackTimer = 0;
                         substate++;
                         break;
@@ -981,7 +980,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     // The commander recoils backwards before launching.
                     case 3:
 
-                        npc.velocity = CalamityUtils.MoveTowards(Vector2.UnitX * -2.3f, npc.DirectionTo(target.Center) * -2.3f, 4.5f);
+                        npc.velocity = Utils.MoveTowards(Vector2.UnitX * -2.3f, npc.DirectionTo(target.Center) * -2.3f, 4.5f);
 
                         // Make the spear rotation point to the player.
                         idealRotation = npc.SafeDirectionTo(target.Center).ToRotation();
@@ -1056,7 +1055,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     // The defender hovers above you, charging up energy.
                     case 0:
                         xOffset = Main.rand.NextFloat(25f, 50f) * Main.rand.NextFromList(-1f, 1f);
-                        npc.netUpdate = true;
                         Vector2 hoverDestination = target.Center + new Vector2(xOffset, -400f);
                         npc.velocity = (npc.velocity * 7f + npc.SafeDirectionTo(hoverDestination) * MathF.Min(npc.Distance(hoverDestination), flySpeed)) / 8f;
 
@@ -1277,7 +1275,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     // Get an offset from the player.
                     case 0:
                         commanderOffset += Main.rand.NextFloat(0f, TwoPi) * Main.rand.NextFromList(-1f, 1f);
-                        commander.netUpdate = true;
                         if (universalAttackTimer <= fadeInTime)
                             npc.Opacity = Clamp(npc.Opacity - 0.0625f, 0f, 1f);
                         else
@@ -1464,9 +1461,9 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     // Move to said offset.
                     case 1:
                         Vector2 hoverDestination = target.Center + (commanderOffset + PI).ToRotationVector2() * defenderHoverDistance;
+
                         if (universalAttackTimer == 1)
                         {
-                            npc.netUpdate = true; //defender slightly desyncs here. dunno why
                             npc.Center = hoverDestination;
                             for (int i = 0; i < 75; i++)
                             {
@@ -1771,7 +1768,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                         shieldStatus = (float)DefenderShieldStatus.ActiveAndAiming;
                         hoverOffsetX = hoverOffset.X;
                         hoverOffsetY = hoverOffset.Y;
-                        npc.netUpdate = true;
                         localAttackTimer = 0;
                         substate++;
                         break;
@@ -2830,7 +2826,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                         Vector2 riftPosition = target.Center + Main.rand.NextVector2CircularEdge(750f, 650f);
                         npc.Center = riftPosition;
                         npc.velocity = Vector2.Zero;
-                        npc.netUpdate = true;
                         sittingInPortalIndex = Utilities.NewProjectileBetter(riftPosition, Vector2.Zero, ModContent.ProjectileType<HolyFireRift>(), 0, 0f);
                     }
 
@@ -2984,7 +2979,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                 Main.player[commander.target].Infernum_Camera().CurrentScreenShakePower = commander.Infernum().ExtraAI[GuardianSkyExtraIntensityIndex] * 12f;
                 ScreenEffectSystem.SetBlurEffect(commander.Center, 2f, 90);
             }
-            commander.netUpdate = true;
         }
 
         public static void SelectNewAttack(NPC commander, ref float universalAttackTimer, float specificAttackToSwapTo = -1)
@@ -3011,7 +3005,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                         else
                             defender.Infernum().ExtraAI[DefenderShieldStatusIndex] = (float)DefenderShieldStatus.Inactive;
                     }
-                    defender.netUpdate = true;
                 }
             }
 
@@ -3022,7 +3015,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                     NPC healer = Main.npc[CalamityGlobalNPC.doughnutBossHealer];
                     for (int i = 0; i < aiSlotsToClear; i++)
                         healer.Infernum().ExtraAI[i] = 0f;
-                    healer.netUpdate = true;
                 }
             }
 
@@ -3062,7 +3054,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
 
             else if ((GuardiansAttackType)commander.ai[0] < GuardiansAttackType.FireballBulletHell)
                 commander.ai[0]++;
-            commander.netUpdate = true;
         }
 
         public static void DespawnTransitionProjectiles()

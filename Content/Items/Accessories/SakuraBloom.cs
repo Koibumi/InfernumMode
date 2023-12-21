@@ -37,25 +37,23 @@ namespace InfernumMode.Content.Items.Accessories
         {
             loveSparkles.RemoveAll(s => s.Time >= s.Lifetime);
             memorySparkles.RemoveAll(s => s.Time >= s.Lifetime);
-            
             if (line.Text.StartsWith("A symbol of how beautiful love is when in bloom, and how easily it can wither away"))
             {
                 Vector2 drawOffset = Vector2.UnitY * yOffset;
 
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.FirstText").Value);
+                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "A symbol of how beautiful ");
 
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.SecondText").Value, true);
+                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "love", true);
 
-                DrawLine(line, drawOffset, ref loveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.ThirdText").Value);
+                DrawLine(line, drawOffset, ref loveSparkles, " is when it’s in bloom, and yet how easily it can wither away");
                 return false;
             }
-            // Idk what is this for -marow
             else if (line.Text == "Temporary")
             {
                 Vector2 drawOffset = Vector2.UnitY * yOffset;
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.FourthText").Value);
-                drawOffset.X += DrawLine(line, drawOffset, ref memorySparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.FifthText").Value, true, 12);
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.SixthText").Value);
+                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "Maybe with this, we can hold onto the ");
+                drawOffset.X += DrawLine(line, drawOffset, ref memorySparkles, "memories", true, 12);
+                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "?");
                 return false;
             }
 

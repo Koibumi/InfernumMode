@@ -7,7 +7,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Audio;
 using Terraria.GameContent;
-using Terraria.Localization;
 using Terraria.ModLoader;
 using GreatSandSharkNPC = CalamityMod.NPCs.GreatSandShark.GreatSandShark;
 
@@ -17,7 +16,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.GreatSandShark
     {
         public override int NPCOverrideType => ModContent.NPCType<GreatSandSharkNPC>();
 
-        public static LocalizedText NewName = Utilities.GetLocalization("NPCs.GreatSandShark.DisplayName");
+        public const string NewName = "Taurus, the Great Sand Shark";
 
         public override void Load()
         {

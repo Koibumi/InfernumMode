@@ -15,10 +15,12 @@ namespace InfernumMode.Content.Items.Relics
             {
                 if (WorldSaveSystem.HasBeatenInfernumNightProvBeforeDay)
                 {
-                    return Utilities.GetLocalization("Items.ProvidenceRelic.PersonalMessage.HasBeatenInfernumNightProvBeforeDayMessage").Value;
+                    return "Bruh? What the heck? Are you OK?\n" +
+                        "You were supposed to fight her at night AFTER beating her during the day first!";
                 }
 
-                return Utilities.GetLocalization("Items.ProvidenceRelic.PersonalMessage.DefaultMessage").Value;
+                return "The first major hurdle following the defeat of the Moon Lord. Your triumph over her was by no means a small feat.\n" +
+                    "Perhaps consider fighting her again during the night for a special challenge?";
             }
         }
 

@@ -15,10 +15,12 @@ namespace InfernumMode.Content.Items.Relics
             {
                 if (DownedBossSystem.downedExoMechs)
                 {
-                    return Utilities.GetLocalization("Items.SupremeCalamitasRelic.PersonalMessage.DownedExoMechsMessage").Value;
+                    return "Spectacular work. You have conquered all of the major obstacles.\n" +
+                        "Take pride in this accomplishment, for you are considerably stronger than you were when you began.";
                 }
 
-                return Utilities.GetLocalization("Items.SupremeCalamitasRelic.PersonalMessage.DefaultMessage").Value;
+                return "You have done phenomenally. There is only one challenge left now-\n" +
+                    "Face the Cosmic Engineer.";
             }
         }
 
