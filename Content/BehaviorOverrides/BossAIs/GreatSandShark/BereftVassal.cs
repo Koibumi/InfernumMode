@@ -15,6 +15,7 @@ using InfernumMode.Content.Items.Weapons.Magic;
 using InfernumMode.Content.Items.Weapons.Melee;
 using InfernumMode.Content.Items.Weapons.Ranged;
 using InfernumMode.Content.Items.Weapons.Rogue;
+using InfernumMode.Content.Items.Weapons.Summoner;
 using InfernumMode.Content.Subworlds;
 using InfernumMode.Core.CrossCompatibility;
 using InfernumMode.Core.GlobalInstances.Players;
@@ -207,7 +208,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.GreatSandShark
             bestiaryEntry.Info.AddRange(new IBestiaryInfoElement[]
             {
                 BestiaryDatabaseNPCsPopulator.CommonTags.SpawnConditions.Biomes.Desert,
-                new FlavorTextBestiaryInfoElement("A vigilant guardian, once wandering without a purpose. Having learned that his king lives on, it'd seem that he has started to regain his will to live. He looks forward to fighting you again.")
+                new FlavorTextBestiaryInfoElement("Mods.InfernumMode.Bestiary.BereftVassal")
             });
         }
 
@@ -1907,7 +1908,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.GreatSandShark
                 ModContent.ItemType<AridBattlecry>(),
                 ModContent.ItemType<Myrindael>(),
                 ModContent.ItemType<TheGlassmaker>(),
-                ModContent.ItemType<WanderersShell>()
+                ModContent.ItemType<WanderersShell>(),
+                ModContent.ItemType<Perditus>()
             };
 
             normalOnly.Add(ModContent.ItemType<CherishedSealocket>());

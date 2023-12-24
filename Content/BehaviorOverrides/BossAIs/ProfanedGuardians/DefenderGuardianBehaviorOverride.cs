@@ -10,7 +10,6 @@ using InfernumMode.Common.Graphics.ScreenEffects;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.Providence;
 using InfernumMode.Content.Projectiles.Pets;
 using InfernumMode.Content.Projectiles.Wayfinder;
-using InfernumMode.Core;
 using InfernumMode.Core.GlobalInstances.Systems;
 using InfernumMode.Core.OverridingSystem;
 using Microsoft.Xna.Framework;
@@ -32,7 +31,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
     {
         public override int NPCOverrideType => ModContent.NPCType<ProfanedGuardianDefender>();
 
-        public override int? NPCIDToDeferToForTips => ModContent.NPCType<ProfanedGuardianCommander>();
+        public override int? NPCTypeToDeferToForTips => ModContent.NPCType<ProfanedGuardianCommander>();
 
         internal PrimitiveTrailCopy FireDrawer;
 

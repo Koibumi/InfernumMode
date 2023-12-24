@@ -58,9 +58,9 @@ namespace InfernumMode.Content.Tiles.Profaned
             if (CalamityPlayer.areThereAnyDamnBosses)
                 return false;
 
-            UIPlayer player = Main.LocalPlayer.Infernum_UI();
-            player.DrawPlaqueUI = !player.DrawPlaqueUI;
-            if (player.DrawPlaqueUI)
+            InfernumPlayer player = Main.LocalPlayer.Infernum();
+            player.SetValue<bool>("DrawPlaqueUI", !player.GetValue<bool>("DrawPlaqueUI"));
+            if (player.GetValue<bool>("DrawPlaqueUI"))
                 SoundEngine.PlaySound(SoundID.MenuOpen);
             else
                 SoundEngine.PlaySound(SoundID.MenuClose);
@@ -85,7 +85,7 @@ namespace InfernumMode.Content.Tiles.Profaned
 
             if (!GuardiansPlaqueUIManager.ShouldDraw)
             {
-                Main.LocalPlayer.cursorItemIconText = "Read";
+                Main.LocalPlayer.cursorItemIconText = Utilities.GetLocalization("UI.GuardiansPlaqueUI.HoverText").Value;
                 Main.instance.MouseTextHackZoom(Main.LocalPlayer.cursorItemIconText);
             }
         }

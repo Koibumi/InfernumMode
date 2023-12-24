@@ -32,7 +32,7 @@ namespace InfernumMode.Core.GlobalInstances.Systems
 
         public override void PostUpdateEverything()
         {
-            if (!Main.LocalPlayer.dead && !Main.LocalPlayer.Infernum_Tips().ShouldDisplayTips)
+            if (!Main.LocalPlayer.dead && !Main.LocalPlayer.Infernum().GetValue<bool>("ShouldDisplayTips"))
             {
                 NPC foughtBoss = Utilities.CurrentlyFoughtBoss;
                 BossBeingFought = foughtBoss is null ? null : foughtBoss.Clone() as NPC;
@@ -47,7 +47,7 @@ namespace InfernumMode.Core.GlobalInstances.Systems
             if (!NPCBehaviorOverride.BehaviorOverrides.TryGetValue(BossBeingFought.type, out var bossInfo))
                 return string.Empty;
 
-            bossInfo = NPCBehaviorOverride.BehaviorOverrides[bossInfo.NPCIDToDeferToForTips ?? bossInfo.NPCOverrideType];
+            bossInfo = NPCBehaviorOverride.BehaviorOverrides[bossInfo.NPCTypeToDeferToForTips ?? bossInfo.NPCOverrideType];
 
             // This func evaluates the state of the NPC in question, after it died.
             IEnumerable<Func<NPC, string>> potentialTips = bossInfo.GetTips();

@@ -39,7 +39,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.AquaticScourge
 
         public static void DoAI(NPC npc)
         {
-            //Due to slight amounts of lag a multiplayer client's Aquatic Scourge Body can perform its AI before its npc.realLife can be assigned. This causes the worm to decapitate itself immediately.
+            // Due to lag, a client's segment can perform its AI before its npc.realLife can be assigned. This causes the worm to decapitate itself immediately.
             if (Main.netMode == NetmodeID.MultiplayerClient && npc.realLife == -1)
             {
                 npc.timeLeft -= 100;
@@ -51,6 +51,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.AquaticScourge
                 }
                 return;
             }
+
             // Go away if the ahead segment is not present.
             if (!Main.npc.IndexInRange((int)npc.ai[1]) || !Main.npc[(int)npc.ai[1]].active)
             {
@@ -120,15 +121,15 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.AquaticScourge
                 }
 
                 if (AquaticScourgeHeadBehaviorOverride.WormSegments.Any())
-                    AquaticScourgeHeadBehaviorOverride.WormSegments[segmentIndex].position = npc.Center;
+                    AquaticScourgeHeadBehaviorOverride.WormSegments[segmentIndex].Position = npc.Center;
             }
 
             // Follow the verlet segment as directed by the head.
             else
             {
-                npc.Center = AquaticScourgeHeadBehaviorOverride.WormSegments[segmentIndex + 1].position;
+                npc.Center = AquaticScourgeHeadBehaviorOverride.WormSegments[segmentIndex + 1].Position;
 
-                float idealRotation = (AquaticScourgeHeadBehaviorOverride.WormSegments[segmentIndex].position - npc.Center).ToRotation() + PiOver2;
+                float idealRotation = (AquaticScourgeHeadBehaviorOverride.WormSegments[segmentIndex].Position - npc.Center).ToRotation() + PiOver2;
                 npc.rotation = npc.rotation.AngleTowards(idealRotation, 0.03f).AngleLerp(idealRotation, 0.05f);
 
                 // Release blood if in water. If the flesh is eaten, release acid instead as it disappears.

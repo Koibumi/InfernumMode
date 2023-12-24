@@ -1,5 +1,7 @@
+﻿using InfernumMode.Assets.ExtraTextures;
 using InfernumMode.Common.BaseEntities;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 {
@@ -9,11 +11,13 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
         public override float MaxRadius => 1200f;
 
-        public override float RadiusExpandRateInterpolant => 0.15f;
+        public override float RadiusExpandRateInterpolant => 0.2f;
+
+        public override Texture2D ExplosionNoiseTexture => InfernumTextureRegistry.HarshNoise.Value;
 
         public override string Texture => "InfernumMode/Assets/ExtraTextures/GreyscaleObjects/Gleam";
 
-        public override float DetermineScreenShakePower(float lifetimeCompletionRatio, float distanceFromPlayer) => 0f;
+        public override float DetermineScreenShakePower(float lifetimeCompletionRatio, float distanceFromPlayer) => 5f;
 
         public override Color DetermineExplosionColor(float lifetimeCompletionRatio)
         {
@@ -21,7 +25,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             if (ProvidenceBehaviorOverride.IsEnraged)
                 return Color.Lerp(Color.SkyBlue, Color.Cyan, colorInterpolant);
 
-            return Color.Lerp(Color.DarkOrange, Color.Orange, colorInterpolant);
+            return Color.Lerp(Color.DarkOrange, Color.Orange, colorInterpolant) * (1f - lifetimeCompletionRatio);
         }
     }
 }

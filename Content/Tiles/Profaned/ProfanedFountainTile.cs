@@ -3,7 +3,6 @@ using CalamityMod.Dusts;
 using InfernumMode.Content.Items.Placeables;
 using Microsoft.Xna.Framework;
 using Terraria;
-using Terraria.DataStructures;
 using Terraria.GameContent.ObjectInteractions;
 using Terraria.Localization;
 using Terraria.ModLoader;
@@ -52,11 +51,6 @@ namespace InfernumMode.Content.Tiles.Profaned
                 frame = (frame + 1) % 4;
                 frameCounter = 0;
             }
-        }
-
-        public override void KillMultiTile(int i, int j, int frameX, int frameY)
-        {
-            Item.NewItem(new EntitySource_TileBreak(i, j), i * 16, j * 16, 16, 32, ModContent.ItemType<ProfanedFountainItem>());
         }
 
         public override void HitWire(int i, int j)

@@ -1,6 +1,5 @@
 ﻿using CalamityMod;
 using CalamityMod.Events;
-using CalamityMod.Items.SummonItems;
 using CalamityMod.NPCs;
 using CalamityMod.NPCs.DevourerofGods;
 using CalamityMod.NPCs.ProfanedGuardians;
@@ -9,7 +8,6 @@ using CalamityMod.Particles;
 using CalamityMod.Projectiles.Boss;
 using CalamityMod.Sounds;
 using InfernumMode.Assets.Effects;
-using InfernumMode.Assets.ExtraTextures;
 using InfernumMode.Assets.Sounds;
 using InfernumMode.Common.Graphics.AttemptRecording;
 using InfernumMode.Common.Graphics.Particles;
@@ -17,10 +15,9 @@ using InfernumMode.Common.Graphics.ScreenEffects;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.Yharon;
 using InfernumMode.Content.Credits;
-using InfernumMode.Content.Projectiles.Generic;
+using InfernumMode.Content.Cutscenes;
 using InfernumMode.Content.Projectiles.Pets;
 using InfernumMode.Content.Projectiles.Wayfinder;
-using InfernumMode.Core;
 using InfernumMode.Core.GlobalInstances;
 using InfernumMode.Core.GlobalInstances.Players;
 using InfernumMode.Core.GlobalInstances.Systems;
@@ -124,6 +121,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
             EnterLightForm,
             FinalPhaseRadianceBursts,
+
+            CrystalForm
         }
 
         public enum ProvidenceFrameDrawingType
@@ -161,7 +160,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
         {
             if (npc.type == ModContent.NPCType<ProvidenceBoss>() && npc.defense >= 60)
                 modifiers.FinalDamage.Base = (int)Math.Max(modifiers.FinalDamage.Base - npc.defense / 2, 1D);
-            return true;
+             return true;
         }
 
         private void DetermineNightDefeatStatus(NPC npc)
@@ -184,7 +183,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
         #endregion Loading
 
         #region AI
-
         public const int AuraTime = 300;
 
         public const int CocoonDefense = 600;
@@ -209,7 +207,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
         public const int StartedWithMusicDisabledIndex = 12;
 
-        public const int DrawCrystalInterpolant = 13;
+        public const int DeathAnimationGlowIntensityIndex = 13;
 
         public const float DefaultLavaHeight = 1400f;
 
@@ -326,10 +324,12 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             ref float rockReformOffset = ref npc.Infernum().ExtraAI[RockReformOffsetIndex];
             ref float hasCompletedCycle = ref npc.Infernum().ExtraAI[HasCompletedCycleIndex];
             ref float hasEnteredPhase2 = ref npc.Infernum().ExtraAI[HasEnteredPhase2Index];
+            ref float deathAnimationGlowIntensity = ref npc.Infernum().ExtraAI[DeathAnimationGlowIntensityIndex];
 
             bool shouldDespawnAtNight = wasSummonedAtNight == 0f && IsEnraged && attackType != (int)ProvidenceAttackType.EnterFireFormBulletHell;
             bool shouldDespawnAtDay = wasSummonedAtNight == 1f && !IsEnraged && attackType != (int)ProvidenceAttackType.EnterFireFormBulletHell;
             bool shouldDespawnBecauseOfTime = (shouldDespawnAtNight || shouldDespawnAtDay) && !BossRushEvent.BossRushActive;
+            bool inDeathCutscene = attackType == (int)ProvidenceAttackType.CrystalForm;
 
             Vector2 crystalCenter = npc.Center + new Vector2(8f, 56f);
 
@@ -440,7 +440,15 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             {
                 Filters.Scene.Activate("InfernumMode:ScreenDistortion", Main.LocalPlayer.Center);
                 InfernumEffectsRegistry.ScreenDistortionScreenShader.GetShader().UseImage("Images/Extra_193");
-                InfernumEffectsRegistry.ScreenDistortionScreenShader.GetShader().Shader.Parameters["distortionAmount"].SetValue(4f);
+
+                // Slowly vanish during the death animation.
+                float strength = 4f;
+                if (deathEffectTimer > 0f)
+                    strength *= Utils.GetLerpValue(435f, 0f, deathEffectTimer, true);
+                if (inDeathCutscene)
+                    strength = 0f;
+
+                InfernumEffectsRegistry.ScreenDistortionScreenShader.GetShader().Shader.Parameters["distortionAmount"].SetValue(strength);
                 InfernumEffectsRegistry.ScreenDistortionScreenShader.GetShader().Shader.Parameters["wiggleSpeed"].SetValue(2f);
             }
 
@@ -464,9 +472,9 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             }
 
             // Perform the death animation.
-            if (lifeRatio < DeathAnimationLifeRatio)
+            if (lifeRatio < DeathAnimationLifeRatio && !inDeathCutscene)
             {
-                DoBehavior_DeathAnimation(npc, target, deathEffectTimer, wasSummonedAtNight == 1f, ref burnIntensity);
+                DoBehavior_DeathAnimation(npc, target, ref deathEffectTimer, wasSummonedAtNight == 1f, ref deathAnimationGlowIntensity);
                 deathEffectTimer++;
                 return false;
             }
@@ -477,7 +485,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             int localAttackDuration = attackInfo.LocalAttackDuration;
 
             // Reset things if the attack changed.
-            if (attackType != (int)attackInfo.CurrentAttack)
+            if (attackType != (int)attackInfo.CurrentAttack && !inDeathCutscene)
             {
                 for (int i = 0; i < 5; i++)
                     npc.Infernum().ExtraAI[i] = 0f;
@@ -555,6 +563,11 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
                 case ProvidenceAttackType.FinalPhaseRadianceBursts:
                     DoBehavior_FinalPhaseRadianceBursts(npc, target, arenaTopCenter, localAttackTimer, localAttackDuration, ref lavaHeight, ref hasCompletedCycle);
                     break;
+
+                case ProvidenceAttackType.CrystalForm:
+                    DoBehavior_CrystalForm(npc, target, ref deathEffectTimer);
+                    deathEffectTimer++;
+                    break;
             }
 
             // Rotate slightly in the direction of horizontal movement.
@@ -595,18 +608,39 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             return new(localAttackTimer, localAttackDuration, currentAttack);
         }
 
-        public static void DoBehavior_DeathAnimation(NPC npc, Player target, float deathEffectTimer, bool wasSummonedAtNight, ref float burnIntensity)
+        public static void DoBehavior_DeathAnimation(NPC npc, Player target, ref float deathEffectTimer, bool wasSummonedAtNight, ref float burnIntensity)
         {
+            ref float lavaHeight = ref npc.Infernum().ExtraAI[LavaHeightIndex];
+            ref float originalLavaHeight = ref npc.Infernum().ExtraAI[14];
+
+            float attackLength = 435f;
+
             // Mark death effects on the first frame of the animation.
             if (deathEffectTimer == 1f)
             {
+                typeof(MoonlordDeathDrama).GetField("whitening", Utilities.UniversalBindingFlags).SetValue(null, 1f);
+
                 AchievementPlayer.ProviDefeated = true;
 
                 if (wasSummonedAtNight)
                     AchievementPlayer.NightProviDefeated = true;
+
+                originalLavaHeight = lavaHeight;
+
+                lavaHeight = 0f;
+
+                BlockerSystem.Start(false, true, () => NPC.AnyNPCs(ModContent.NPCType<ProvidenceBoss>()));
+
+                npc.Center = new Vector2(WorldSaveSystem.ProvidenceArena.Center().X + 395f, WorldSaveSystem.ProvidenceArena.Top + 85) * 16f + Vector2.One * 8f;
+                ReleaseSparkles(npc.Center, 150, 100f);
+                ClearEntities();
             }
+
             npc.Opacity = 1f;
-            npc.rotation = npc.rotation.AngleTowards(0f, 0.02f);
+            npc.rotation = 0f;
+
+            ZoomSystem.SetZoomEffect(Lerp(0.15f, 0f, Utils.GetLerpValue(0f, attackLength, deathEffectTimer, true)));
+
             if (deathEffectTimer == 1f && !Main.dedServ)
             {
                 SoundEngine.PlaySound(ProvidenceBoss.DeathAnimationSound with
@@ -615,42 +649,40 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
                 }, target.Center);
             }
 
+            // Cause the screen to focus on the crystal.
+            if (target.WithinRange(npc.Center, 5000f))
+            {
+                target.Infernum_Camera().ScreenFocusPosition = npc.Center;
+                target.Infernum_Camera().ScreenFocusHoldInPlaceTime = 60;
+                target.Infernum_Camera().ScreenFocusInterpolant = 1f;
+            }
+
             // Mark Providence as defeated at night. This is necessary for ensuring that the moonlight dye drops.
             npc.ModNPC<ProvidenceBoss>().hasTakenDaytimeDamage = wasSummonedAtNight;
-
-            // Delete remaining projectiles with a shockwave.
-            if (deathEffectTimer == 96f)
-            {
-                int[] typesToDelete = new int[]
-                {
-                    ModContent.ProjectileType<AcceleratingCrystalShard>(),
-                    ModContent.ProjectileType<FallingCrystalShard>(),
-                    ModContent.ProjectileType<HolySunExplosion>(),
-                    ModContent.ProjectileType<ProfanedSpear>(),
-                    ModContent.ProjectileType<HolyBlast>(),
-                };
-                Utilities.DeleteAllProjectiles(false, typesToDelete);
-            }
 
             burnIntensity = MathF.Max(burnIntensity, Utils.GetLerpValue(0f, 45f, deathEffectTimer, true));
             npc.life = (int)Lerp(npc.lifeMax * DeathAnimationLifeRatio - 1f, 1f, Utils.GetLerpValue(0f, 435f, deathEffectTimer, true));
             npc.dontTakeDamage = true;
-            npc.velocity *= 0.9f;
-
-            // Move towards the player if inside of walls, to ensure that the loot is obtainable.
-            if (Collision.SolidCollision(npc.TopLeft, npc.width, npc.height))
-                npc.Center = npc.Center.MoveTowards(target.Center, 10f);
+            npc.velocity = Vector2.Zero;
 
             if (Main.netMode != NetmodeID.MultiplayerClient)
             {
                 int shootRate = (int)Lerp(12f, 5f, Utils.GetLerpValue(0f, 250f, deathEffectTimer, true));
                 if (deathEffectTimer % shootRate == shootRate - 1 || deathEffectTimer == 92f)
                 {
+                    target.Infernum_Camera().CurrentScreenShakePower = 2f;
+
                     for (int i = 0; i < 3; i++)
                     {
                         int shootType = ModContent.ProjectileType<SwirlingFire>();
+
+                        Vector2 shootVelocity = Main.rand.NextVector2CircularEdge(7f, 7f) * Main.rand.NextFloat(0.7f, 1.3f);
+                        if (Vector2.Dot(shootVelocity.SafeNormalize(Vector2.Zero), npc.SafeDirectionTo(target.Center)) < 0.5f)
+                            shootVelocity *= 1.7f;
+
                         if (Main.rand.NextBool(150) && deathEffectTimer >= 110f || deathEffectTimer == 92f)
                         {
+
                             if (deathEffectTimer >= 320f)
                             {
                                 shootType = ModContent.ProjectileType<YharonBoom>();
@@ -659,35 +691,47 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
                             else
                             {
                                 shootType = ModContent.ProjectileType<ProvBoomDeath>();
+                                shootVelocity = Vector2.Zero;
                                 ReleaseSparkles(npc.Center, 6, 18f);
                                 SoundEngine.PlaySound(CommonCalamitySounds.FlareSound, target.Center);
                                 SoundEngine.PlaySound(HolyBlast.ImpactSound, target.Center);
                             }
-                        }
+                            target.Infernum_Camera().CurrentScreenShakePower = 8f;
 
-                        Vector2 shootVelocity = Main.rand.NextVector2CircularEdge(7f, 7f) * Main.rand.NextFloat(0.7f, 1.3f);
-                        if (Vector2.Dot(shootVelocity.SafeNormalize(Vector2.Zero), npc.SafeDirectionTo(target.Center)) < 0.5f)
-                            shootVelocity *= 1.7f;
+                        }
 
                         Utilities.NewProjectileBetter(npc.Center, shootVelocity, shootType, 0, 0f, 255);
                     }
                 }
             }
 
-            if (deathEffectTimer >= 320f && deathEffectTimer <= 360f && deathEffectTimer % 10f == 0f)
+            if (deathEffectTimer >= 320f && deathEffectTimer <= 410f)
             {
-                int sparkleCount = (int)Lerp(10f, 30f, Main.gfxQuality);
-                int boomChance = (int)Lerp(8f, 3f, Main.gfxQuality);
-                if (Main.netMode != NetmodeID.MultiplayerClient && Main.rand.NextBool(boomChance))
-                    Utilities.NewProjectileBetter(npc.Center, Vector2.Zero, ModContent.ProjectileType<ProvBoomDeath>(), 0, 0f);
+                if (deathEffectTimer >= 340f && deathEffectTimer % 10f == 1f)
+                {
+                    GeneralParticleHandler.SpawnParticle(new BurstParticle(npc.Center, Vector2.Zero, DoGPostProviCutscene.TimeColor, 36, true));
+                    ScreenEffectSystem.SetBlurEffect(npc.Center, 1f, 30);
+                    ScreenEffectSystem.SetFlashEffect(npc.Center, 1.3f, 30);
+                    target.Infernum_Camera().CurrentScreenShakePower = 10f;
 
-                ReleaseSparkles(npc.Center, sparkleCount, 18f);
-                SoundEngine.PlaySound(CommonCalamitySounds.FlareSound, target.Center);
-                SoundEngine.PlaySound(HolyBlast.ImpactSound, target.Center);
+                    ReleaseSparkles(npc.Center, 6, 150);
+                    SoundEngine.PlaySound(CommonCalamitySounds.FlareSound, target.Center);
+                    SoundEngine.PlaySound(HolyBlast.ImpactSound with { Pitch = 0.2f}, target.Center);
+                }
+
+                if (deathEffectTimer <= 360f && deathEffectTimer % 10f == 0f)
+                {
+                    int sparkleCount = (int)Lerp(10f, 30f, Main.gfxQuality);
+
+                    if (Main.netMode != NetmodeID.MultiplayerClient)
+                        Utilities.NewProjectileBetter(npc.Center, Vector2.Zero, ModContent.ProjectileType<ProvBoomDeath>(), 0, 0f);
+
+                    ReleaseSparkles(npc.Center, sparkleCount, 50f);
+                    SoundEngine.PlaySound(CommonCalamitySounds.FlareSound, target.Center);
+                    SoundEngine.PlaySound(HolyBlast.ImpactSound, target.Center);
+                }
+
             }
-
-            if (deathEffectTimer >= 370f)
-                npc.Opacity *= 0.97f;
 
             if (Main.netMode != NetmodeID.MultiplayerClient && deathEffectTimer == 400f)
             {
@@ -695,8 +739,81 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
                 Utilities.NewProjectileBetter(npc.Center, Vector2.Zero, ModContent.ProjectileType<DyingSun>(), 0, 0f, 255);
             }
 
-            if (deathEffectTimer >= 435f)
+
+            if (deathEffectTimer >= attackLength)
             {
+                if (WorldSaveSystem.HasSeenDoGCutscene || BossRushEvent.BossRushActive)
+                    DoBehavior_DropLootAndDie(npc, target);
+                else
+                {
+                    npc.ai[0] = (float)ProvidenceAttackType.CrystalForm;
+                    npc.ai[1] = 0f;
+                    npc.netUpdate = true;
+                    deathEffectTimer = 0f;
+                }
+            }
+        }
+
+        public static void DoBehavior_CrystalForm(NPC npc, Player target, ref float deathEffectsTimer)
+        {
+            int dieTime = ModContent.GetInstance<DoGPostProviCutscene>().CutsceneLength;
+
+            int dogHeadType = ModContent.NPCType<DevourerofGodsHead>();
+
+            npc.velocity = Vector2.Zero;
+            npc.dontTakeDamage = true;
+            npc.damage = 0;
+            npc.Calamity().ShouldCloseHPBar = true;
+            npc.ShowNameOnHover = false;
+
+            // Cause the screen to focus on the crystal.
+            if (target.WithinRange(npc.Center, 5000f) && !NPC.AnyNPCs(dogHeadType))
+            {
+                target.Infernum_Camera().ScreenFocusPosition = npc.Center + Vector2.UnitY * 55f;
+                target.Infernum_Camera().ScreenFocusHoldInPlaceTime = 45;
+
+                target.Infernum_Camera().ScreenFocusInterpolant = 1f;
+            }
+
+            if (deathEffectsTimer < DoGPostProviCutscene.StartTime + DoGPostProviCutscene.SlowddownTime + (int)(DoGPostProviCutscene.ChompTime * 0.5f))
+            {
+                // Periodically emit shockwaves, similar to the crystal hearts in Celeste.
+                if (deathEffectsTimer % 120f == 67f)
+                    Utilities.CreateShockwave(npc.Center, 2, 7, 18f, false);
+                else if (deathEffectsTimer % 120f == 89f)
+                {
+                    SoundEngine.PlaySound(InfernumSoundRegistry.TerminusPulseSound with { Pitch = 0.9f }, npc.Center);
+                    SoundEngine.PlaySound(InfernumSoundRegistry.ProvidenceBurnSound with { Pitch = 0.3f }, npc.Center);
+                }
+            }
+
+            if (deathEffectsTimer == 1)
+                CutsceneManager.QueueCutscene(ModContent.GetInstance<DoGPostProviCutscene>());
+
+            if (deathEffectsTimer >= dieTime)
+                DoBehavior_DropLootAndDie(npc, target);
+        }
+
+        private static void DoBehavior_DropLootAndDie(NPC npc, Player target)
+        {
+            for (int i = 0; i < 2; i++)
+                GuardianComboAttackManager.CreateFireExplosion(npc.Center, true);
+
+            if (Main.netMode != NetmodeID.MultiplayerClient)
+            {
+                Utilities.NewProjectileBetter(npc.Center, Vector2.Zero, ModContent.ProjectileType<ProvBoomDeath>(), 0, 0f);
+                Utilities.CreateShockwave(npc.Center, 3, 13, 150, false);
+
+                for (int i = 0; i < 80; i++)
+                {
+                    Vector2 shootVelocity = Main.rand.NextVector2CircularEdge(7f, 7f) * Main.rand.NextFloat(0.7f, 1.3f);
+                    if (Vector2.Dot(shootVelocity.SafeNormalize(Vector2.Zero), npc.SafeDirectionTo(target.Center)) < 0.5f)
+                        shootVelocity *= 1.7f;
+
+                    Utilities.NewProjectileBetter(npc.Center, shootVelocity, ModContent.ProjectileType<SwirlingFire>(), 0, 0f, 255);
+                }
+                npc.Center += Vector2.UnitY * 55f;
+
                 npc.active = false;
                 if (!target.dead)
                 {
@@ -731,6 +848,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             // Become fully opaque.
             npc.Opacity = 1f;
             burnIntensity = Pow(Utils.GetLerpValue(90f, 0f, localAttackTimer, true), 0.12f) * 0.96f;
+
+            npc.Calamity().DR = 0.90f;
 
             if (localAttackTimer <= 5f)
                 performedEndEffects = 0f;
@@ -1409,6 +1528,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             float circleShootSpeed = spiralShootSpeed * 1.36f;
             bool canShootCircle = attackCompletion >= 0.5f;
 
+            npc.Calamity().DR = 0.90f;
+
             // Make the attack faster according to life ratio.
             // This may seem unintuitive since it's a "quiet" attack but there's always the possibility that the player won't kill Providence within one
             // music cycle, meaning that she could have significantly weakened HP by the time this happens a second or third time.
@@ -1536,6 +1657,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
             // Stay in the cocoon.
             drawState = (int)ProvidenceFrameDrawingType.CocoonState;
+
+            npc.Calamity().DR = 0.80f;
 
             if (!doneAttacking)
                 bombCreationTimer++;
@@ -1715,6 +1838,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
             {
                 drawState = (int)ProvidenceFrameDrawingType.CocoonState;
                 npc.velocity *= 0.85f;
+                npc.Calamity().DR = 0.90f;
             }
             else
                 npc.SimpleFlyMovement(npc.SafeDirectionTo(arenaTopCenter) * 26f, 0.3f);
@@ -1793,6 +1917,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
             // Stay in the cocoon during this attack.
             drawState = (int)ProvidenceFrameDrawingType.CocoonState;
+
+            npc.Calamity().DR = 0.90f;
 
             // Slow down.
             npc.velocity.X *= 0.85f;
@@ -2143,7 +2269,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
             // Force a laser to be shot if there hasn't been one in a while. This is done to prevent awkward transition points in the song without bells from messing with fight flow.
             if (countdownUntilNextLaser > 0f)
-                countdownUntilNextLaser--;             
+                countdownUntilNextLaser--;
 
             if (countdownUntilNextLaser <= 0f)
                 shootLaser = true;
@@ -2218,6 +2344,8 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
             // Stay in the cocoon during this attack by default.
             drawState = (int)ProvidenceFrameDrawingType.CocoonState;
+
+            npc.Calamity().DR = 0.90f;
 
             // Play a rock reform sound once the shell is about to come back.
             if (localAttackTimer == rockReformDelay)
@@ -2578,237 +2706,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Providence
 
         public static Color RuneColorFunction(NPC n, float _) => Color.Lerp(Color.Yellow, Color.Wheat, 0.8f) * (1f - n.Opacity) * n.Infernum().ExtraAI[1];
 
-        public override bool PreDraw(NPC npc, SpriteBatch spriteBatch, Color lightColor)
-        {
-            // Initialize the 3D strip.
-            npc.Infernum().Optional3DStripDrawer ??= new(RuneHeightFunction, c => RuneColorFunction(npc, c));
-
-            string baseTextureString = "CalamityMod/NPCs/Providence/";
-            string baseGlowTextureString = baseTextureString + "Glowmasks/";
-            string rockTextureString = "InfernumMode/Content/BehaviorOverrides/BossAIs/Providence/Sheets/ProvidenceRock";
-
-            string getTextureString = baseTextureString + "Providence";
-            string getTextureGlowString;
-            string getTextureGlow2String;
-
-            bool useDefenseFrames = npc.localAI[1] == 1f;
-            float lifeRatio = npc.life / (float)npc.lifeMax;
-            ProvidenceAttackType attackType = (ProvidenceAttackType)(int)npc.ai[0];
-
-            ref float burnIntensity = ref npc.localAI[3];
-
-            ref float drawCrystal = ref npc.Infernum().ExtraAI[DrawCrystalInterpolant];
-
-            void drawProvidenceInstance(Vector2 baseDrawPosition, int frameOffset, Color baseDrawColor)
-            {
-                rockTextureString = "InfernumMode/Content/BehaviorOverrides/BossAIs/Providence/Sheets/";
-                if (npc.localAI[0] == (int)ProvidenceFrameDrawingType.CocoonState)
-                {
-                    if (!useDefenseFrames)
-                    {
-                        rockTextureString += "ProvidenceDefenseRock";
-                        getTextureString = baseTextureString + "ProvidenceDefense";
-                        getTextureGlowString = baseGlowTextureString + "ProvidenceDefenseGlow";
-                        getTextureGlow2String = baseGlowTextureString + "ProvidenceDefenseGlow2";
-                    }
-                    else
-                    {
-                        rockTextureString += "ProvidenceDefenseAltRock";
-                        getTextureString = baseTextureString + "ProvidenceDefenseAlt";
-                        getTextureGlowString = baseGlowTextureString + "ProvidenceDefenseAltGlow";
-                        getTextureGlow2String = baseGlowTextureString + "ProvidenceDefenseAltGlow2";
-                    }
-                }
-                else
-                {
-                    if (npc.localAI[2] == 0f)
-                    {
-                        rockTextureString += "ProvidenceRock";
-                        getTextureGlowString = baseGlowTextureString + "ProvidenceGlow";
-                        getTextureGlow2String = baseGlowTextureString + "ProvidenceGlow2";
-                    }
-                    else if (npc.localAI[2] == 1f)
-                    {
-                        getTextureString = baseTextureString + "ProvidenceAlt";
-                        rockTextureString += "ProvidenceAltRock";
-                        getTextureGlowString = baseGlowTextureString + "ProvidenceAltGlow";
-                        getTextureGlow2String = baseGlowTextureString + "ProvidenceAltGlow2";
-                    }
-                    else if (npc.localAI[2] == 2f)
-                    {
-                        rockTextureString += "ProvidenceAttackRock";
-                        getTextureString = baseTextureString + "ProvidenceAttack";
-                        getTextureGlowString = baseGlowTextureString + "ProvidenceAttackGlow";
-                        getTextureGlow2String = baseGlowTextureString + "ProvidenceAttackGlow2";
-                    }
-                    else
-                    {
-                        rockTextureString += "ProvidenceAttackAltRock";
-                        getTextureString = baseTextureString + "ProvidenceAttackAlt";
-                        getTextureGlowString = baseGlowTextureString + "ProvidenceAttackAltGlow";
-                        getTextureGlow2String = baseGlowTextureString + "ProvidenceAttackAltGlow2";
-                    }
-                }
-
-                float wingVibrance = 1f;
-                getTextureGlowString += "Night";
-
-                Texture2D generalTexture = ModContent.Request<Texture2D>(getTextureString).Value;
-                Texture2D crystalTexture = ModContent.Request<Texture2D>(getTextureGlow2String).Value;
-                Texture2D wingTexture = ModContent.Request<Texture2D>(getTextureGlowString).Value;
-                Texture2D fatCrystalTexture = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/Providence/ProvidenceCrystal").Value;
-
-                SpriteEffects spriteEffects = SpriteEffects.None;
-                if (npc.spriteDirection == 1)
-                    spriteEffects = SpriteEffects.FlipHorizontally;
-
-                Vector2 drawOrigin = npc.frame.Size() * 0.5f;
-
-                // Draw the crystal behind everything. It will appear if providence is herself invisible.
-                if (npc.localAI[3] <= 0f)
-                {
-                    float backglowTelegraphInterpolant = 0f;
-                    if (npc.ai[0] == (int)ProvidenceAttackType.RockMagicRitual)
-                        backglowTelegraphInterpolant = npc.Infernum().ExtraAI[2];
-
-                    Vector2 crystalOrigin = fatCrystalTexture.Size() * 0.5f;
-
-                    // Draw a backglow if necessary.
-                    if (backglowTelegraphInterpolant > 0f)
-                    {
-                        for (int i = 0; i < 8; i++)
-                        {
-                            Vector2 drawOffset = (TwoPi * i / 8f).ToRotationVector2() * backglowTelegraphInterpolant * 12f;
-                            Color backglowColor = Color.Pink with
-                            {
-                                A = 0
-                            };
-                            Main.spriteBatch.Draw(fatCrystalTexture, npc.Center - Main.screenPosition + drawOffset, null, backglowColor, npc.rotation, crystalOrigin, npc.scale, spriteEffects, 0f);
-                        }
-                    }
-
-                    for (int i = 4; i >= 0; i--)
-                    {
-                        Color afterimageColor = Color.White * (1f - i / 5f);
-                        Vector2 crystalDrawPosition = Vector2.Lerp(npc.oldPos[i], npc.position, 0.4f) + npc.Size * 0.5f - Main.screenPosition;
-                        Main.spriteBatch.Draw(fatCrystalTexture, crystalDrawPosition, null, afterimageColor, npc.rotation, crystalOrigin, npc.scale, spriteEffects, 0f);
-                    }
-                }
-
-                int frameHeight = generalTexture.Height / 3;
-                if (frameHeight <= 0)
-                    frameHeight = 1;
-
-                Rectangle frame = generalTexture.Frame(1, 3, 0, (npc.frame.Y / frameHeight + frameOffset) % 3);
-
-                // Draw the converging shell if applicable.
-                float rockReformOffset = npc.Infernum().ExtraAI[RockReformOffsetIndex];
-                if (rockReformOffset > 0f)
-                {
-                    Texture2D headRock = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/Providence/Sheets/ProvidenceRock1").Value;
-                    Texture2D leftBodyRock = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/Providence/Sheets/ProvidenceRock2").Value;
-                    Texture2D rightBodyRock = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/Providence/Sheets/ProvidenceRock3").Value;
-
-                    float rockOffsetRotation = TwoPi * rockReformOffset / 2500f;
-                    float rockOpacity = Utils.GetLerpValue(700f, 300f, rockReformOffset, true);
-                    Vector2 crystalOffsetCorrection = -Vector2.UnitY.RotatedBy(npc.rotation * npc.spriteDirection) * npc.scale * 40f;
-                    Vector2 headDrawPosition = baseDrawPosition - new Vector2(0.1f, 1f).RotatedBy(npc.rotation * npc.spriteDirection) * (npc.scale * 60f + rockReformOffset) + crystalOffsetCorrection;
-                    Vector2 leftDrawPosition = baseDrawPosition - Vector2.UnitX.RotatedBy(npc.rotation * npc.spriteDirection) * (rockReformOffset - 10f) + crystalOffsetCorrection;
-                    Vector2 rightDrawPosition = baseDrawPosition + Vector2.UnitX.RotatedBy(npc.rotation * npc.spriteDirection) * (rockReformOffset - 12f) + crystalOffsetCorrection;
-                    Main.spriteBatch.Draw(headRock, headDrawPosition, null, baseDrawColor * rockOpacity, npc.rotation + rockOffsetRotation, headRock.Size() * new Vector2(0.5f, 1f), npc.scale, spriteEffects, 0f);
-                    Main.spriteBatch.Draw(leftBodyRock, leftDrawPosition, null, baseDrawColor * rockOpacity, npc.rotation + rockOffsetRotation, leftBodyRock.Size() * new Vector2(1f, 0.5f), npc.scale, spriteEffects, 0f);
-                    Main.spriteBatch.Draw(rightBodyRock, rightDrawPosition, null, baseDrawColor * rockOpacity, npc.rotation + rockOffsetRotation, leftBodyRock.Size() * new Vector2(0f, 0.5f), npc.scale, spriteEffects, 0f);
-                }
-
-                // Draw the base texture.
-                Main.spriteBatch.Draw(generalTexture, baseDrawPosition, frame, npc.GetAlpha(baseDrawColor), npc.rotation, drawOrigin, npc.scale, spriteEffects, 0f);
-
-                // Draw the wings.
-                DrawProvidenceWings(npc, wingTexture, wingVibrance, baseDrawPosition, frame, drawOrigin, spriteEffects);
-
-                // Draw the crystals.
-                for (int i = 0; i < 9; i++)
-                {
-                    Vector2 drawOffset = (TwoPi * i / 9f).ToRotationVector2() * 2f;
-                    Main.spriteBatch.Draw(crystalTexture, baseDrawPosition + drawOffset, frame, Color.White with
-                    {
-                        A = 0
-                    } * npc.Opacity * Pow(1f - npc.localAI[3], 3f), npc.rotation, drawOrigin, npc.scale, spriteEffects, 0f);
-                }
-            }
-
-            // Only draw the crystal in the post death cutscene.
-            if (drawCrystal == 1f)
-            {
-                Color timeColor = Color.Lerp(WayfinderSymbol.Colors[0], WayfinderSymbol.Colors[2], 0.2f);
-                if (IsEnraged)
-                    timeColor = Color.DeepSkyBlue;
-
-                Texture2D fatCrystalTexture = ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/Providence/ProvidenceCrystal").Value;
-                Texture2D bloomTexture = InfernumTextureRegistry.BloomFlare.Value;
-
-                spriteBatch.Draw(bloomTexture, npc.Center - Main.screenPosition, null, timeColor with { A = 0 } * Lerp(0.3f, 0.6f, (1f + Sin(PI * Main.GlobalTimeWrappedHourly * 1.1f)) * 0.5f), Main.GlobalTimeWrappedHourly, bloomTexture.Size() * 0.5f, 0.3f, SpriteEffects.None, 0f);;
-                spriteBatch.Draw(bloomTexture, npc.Center - Main.screenPosition, null, Color.Lerp(timeColor, Color.White, 0.3f) with { A = 0 } * Lerp(0.3f, 0.6f, (1f + Sin(PI * Main.GlobalTimeWrappedHourly * 1.4f)) * 0.5f), -Main.GlobalTimeWrappedHourly, bloomTexture.Size() * 0.5f, 0.3f, SpriteEffects.None, 0f); ;
-                
-                float crystalScale = npc.scale * Lerp(0.9f, 1.1f, (1f + Sin(PI * Main.GlobalTimeWrappedHourly * 0.85f)) * 0.5f);
-
-                for (int i = 0; i < 8; i++)
-                {
-                    Vector2 offset = (TwoPi * i / 8f + Main.GlobalTimeWrappedHourly).ToRotationVector2() * Lerp(4f, 10f, (1f + Sin(PI * Main.GlobalTimeWrappedHourly)) * 0.5f);
-                    Color glowColor = Color.LightPink with { A = 0 } * 0.5f;
-                    spriteBatch.Draw(fatCrystalTexture, npc.Center + offset - Main.screenPosition, null, glowColor, npc.rotation, fatCrystalTexture.Size() * 0.5f, crystalScale, SpriteEffects.None, 0f);
-                }
-
-                spriteBatch.Draw(fatCrystalTexture, npc.Center - Main.screenPosition, null, Color.White, npc.rotation, fatCrystalTexture.Size() * 0.5f, crystalScale, SpriteEffects.None, 0f);
-                spriteBatch.Draw(fatCrystalTexture, npc.Center - Main.screenPosition, null, timeColor with { A = 0 } * Sin(PI * Main.GlobalTimeWrappedHourly * 0.8f) * 0.7f, npc.rotation, fatCrystalTexture.Size() * 0.5f, crystalScale, SpriteEffects.None, 0f);
-
-                return false;
-            }
-
-            int totalProvidencesToDraw = (int)Lerp(1f, 30f, burnIntensity);
-            for (int i = 0; i < totalProvidencesToDraw; i++)
-            {
-                float offsetAngle = TwoPi * i * 2f / totalProvidencesToDraw;
-                float drawOffsetScalar = Sin(offsetAngle * 6f + Main.GlobalTimeWrappedHourly * Pi);
-                drawOffsetScalar *= Pow(burnIntensity, 1.4f) * 36f;
-                drawOffsetScalar *= Lerp(1f, 2f, 1f - lifeRatio);
-
-                Vector2 drawOffset = offsetAngle.ToRotationVector2() * drawOffsetScalar;
-                if (totalProvidencesToDraw <= 1)
-                    drawOffset = Vector2.Zero;
-
-                Vector2 drawPosition = npc.Center - Main.screenPosition + drawOffset;
-
-                Color baseColor = Color.White * (Lerp(0.4f, 0.8f, burnIntensity) / totalProvidencesToDraw * 7f);
-                baseColor.A = 0;
-                baseColor = Color.Lerp(Color.White, baseColor, burnIntensity);
-                if (IsEnraged)
-                {
-                    baseColor = Color.Lerp(baseColor, Color.Cyan with
-                    {
-                        A = 0
-                    }, 0.5f);
-                }
-
-                drawProvidenceInstance(drawPosition, 0, baseColor);
-            }
-
-            // Draw the rock texture above the bloom effects.
-            Texture2D rockTexture = ModContent.Request<Texture2D>(rockTextureString).Value;
-            float opacity = Utils.GetLerpValue(0.038f, 0.04f, lifeRatio, true) * (1f - npc.localAI[3]) * 0.6f;
-            Main.spriteBatch.Draw(rockTexture, npc.Center - Main.screenPosition, npc.frame, npc.GetAlpha(Color.White) * opacity, npc.rotation, npc.frame.Size() * 0.5f, npc.scale, 0, 0);
-
-            // Draw the rune strip on top of everything else during the ritual attack.
-            if (npc.ai[0] == (int)ProvidenceAttackType.RockMagicRitual)
-            {
-                Main.spriteBatch.SetBlendState(BlendState.NonPremultiplied);
-                npc.Infernum().Optional3DStripDrawer.UseBandTexture(ModContent.Request<Texture2D>("InfernumMode/Content/BehaviorOverrides/BossAIs/AdultEidolonWyrm/TerminusSymbols"));
-                npc.Infernum().Optional3DStripDrawer.Draw(npc.Center - Vector2.UnitX * 80f - Main.screenPosition, npc.Center + Vector2.UnitX * 80f - Main.screenPosition, 0.4f, 0f, 0f);
-                Main.spriteBatch.ExitShaderRegion();
-            }
-
-            return false;
-        }
+        public override bool PreDraw(NPC npc, SpriteBatch spriteBatch, Color lightColor) => false;
         #endregion
 
         #region Tips

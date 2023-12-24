@@ -4,9 +4,10 @@ using InfernumMode.Assets.Sounds;
 using InfernumMode.Content.Projectiles.Pets;
 using InfernumMode.Content.Tiles.Misc;
 using InfernumMode.Content.WorldGeneration;
-using InfernumMode.Core;
 using InfernumMode.Core.GlobalInstances;
 using InfernumMode.Core.GlobalInstances.Systems;
+using InfernumMode.Core.Netcode.Packets;
+using InfernumMode.Core.Netcode;
 using InfernumMode.Core.OverridingSystem;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -19,6 +20,8 @@ using Terraria.GameContent;
 using Terraria.GameContent.Events;
 using Terraria.ID;
 using Terraria.ModLoader;
+using InfernumMode.Content.Credits;
+using InfernumMode.Common.Graphics.AttemptRecording;
 
 namespace InfernumMode.Content.BehaviorOverrides.BossAIs.MoonLord
 {
@@ -357,11 +360,14 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.MoonLord
             if (npc.life - realDamage > minLife)
                 return;
 
-            npc.life = 0;
-
-            if (Main.netMode != NetmodeID.MultiplayerClient)
-                npc.StrikeInstantKill();
-            npc.checkDead();
+            // Server side never receives StrikeNPCEvent. if a client believes they killed a ML part the server will receive a packet telling it to run their own HandleBodyPartDeathStrigger.
+            if (Main.netMode == NetmodeID.MultiplayerClient)
+                PacketManager.SendPacket<SyncMoonlordPacket>(npc.whoAmI, realDamage);
+            else
+            {
+                npc.life = 0;
+                npc.checkDead();
+            }
         }
 
         public static void DoBehavior_SpawnEffects(NPC npc, ref float attackTimer)
@@ -515,6 +521,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.MoonLord
             if (npc.Infernum().ExtraAI[8] == 0f && lifeRatio < Phase3LifeRatio)
             {
                 npc.ai[0] = (int)MoonLordAttackState.VoidAccretionDisk;
+                CreditManager.StartRecordingFootageForCredits(ScreenCapturer.RecordingBoss.Moonlord);
                 npc.Infernum().ExtraAI[8] = 1f;
                 npc.Infernum().ExtraAI[7] = 0f;
             }

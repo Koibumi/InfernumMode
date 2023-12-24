@@ -17,9 +17,15 @@ namespace InfernumMode.Core.Netcode.Packets
 
         public override void Read(BinaryReader reader)
         {
-            int n = reader.ReadInt32();
+            int npcIndex = reader.ReadInt32();
             double damage = reader.ReadDouble();
-            UpdateDoGPhaseServer(n, damage);
+            UpdateDoGPhaseServer(npcIndex, damage);
+        }
+
+        public override void Write(ModPacket packet, params object[] context)
+        {
+            packet.Write((int)context[0]);
+            packet.Write((double)context[1]);
         }
     }
 }

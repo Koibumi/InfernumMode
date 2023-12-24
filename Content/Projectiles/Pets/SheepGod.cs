@@ -1,17 +1,36 @@
-using CalamityMod;
+﻿using CalamityMod;
 using CalamityMod.Particles;
+using InfernumMode.Assets.Effects;
+using InfernumMode.Assets.ExtraTextures;
 using InfernumMode.Assets.Sounds;
+using InfernumMode.Common.Graphics;
 using InfernumMode.Content.Buffs;
 using InfernumMode.Core.GlobalInstances.Players;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using Terraria;
 using Terraria.Audio;
+using Terraria.DataStructures;
+using Terraria.GameContent;
+using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace InfernumMode.Content.Projectiles.Pets
 {
     public class SheepGod : ModProjectile
     {
+        public ManagedRenderTarget MainTarget
+        {
+            get;
+            private set;
+        }
+
+        public ManagedRenderTarget PreviousMainTarget
+        {
+            get;
+            private set;
+        }
+
         public Player Owner => Main.player[Projectile.owner];
 
         public bool HasSpecialName
@@ -33,6 +52,8 @@ namespace InfernumMode.Content.Projectiles.Pets
 
         public ref float Time => ref Projectile.ai[1];
 
+        public Vector2 PreviousCenter;
+
         public override void SetStaticDefaults()
         {
             // DisplayName.SetDefault("Sheep God");
@@ -49,6 +70,13 @@ namespace InfernumMode.Content.Projectiles.Pets
             Projectile.penetrate = -1;
             Projectile.timeLeft = 90000;
             Projectile.netImportant = true;
+        }
+
+        public override void OnSpawn(IEntitySource source)
+        {
+            MainTarget = new(true, RenderTargetManager.CreateScreenSizedTarget);
+            PreviousMainTarget = new(true, RenderTargetManager.CreateScreenSizedTarget);
+            RenderTargetManager.RenderTargetUpdateLoopEvent += UpdateEffect;
         }
 
         public override void AI()
@@ -104,8 +132,21 @@ namespace InfernumMode.Content.Projectiles.Pets
                 Projectile.Center = Owner.Center - Vector2.UnitY * 950f + Main.rand.NextVector2Circular(80f, 80f);
                 Projectile.netUpdate = true;
             }
-
+            PreviousCenter = Projectile.Center;
             Time++;
+        }
+
+        public override void OnKill(int timeLeft)
+        {
+            if (Main.netMode != NetmodeID.Server)
+            {
+                RenderTargetManager.RenderTargetUpdateLoopEvent -= UpdateEffect;
+                Main.QueueMainThreadAction(() =>
+                {
+                    MainTarget?.Dispose();
+                    PreviousMainTarget?.Dispose();
+                });
+            }
         }
 
         public void HandlePetVariables()
@@ -115,6 +156,60 @@ namespace InfernumMode.Content.Projectiles.Pets
                 modPlayer.SheepGodPet = false;
             if (modPlayer.SheepGodPet)
                 Projectile.timeLeft = 2;
+        }
+
+        public void UpdateEffect()
+        {
+            // Leave if on the menus.
+            if (Main.gameMenu)
+                return;
+
+            MainTarget.SwapToRenderTarget();
+
+            Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.AnisotropicClamp, DepthStencilState.Default, Main.Rasterizer);
+
+            // Draw the previous frame to the main target.
+            Main.spriteBatch.Draw(PreviousMainTarget, Vector2.Zero, Color.White);
+
+            // Draw the sheep to the target.
+            Main.instance.LoadProjectile(Type);
+            Texture2D sheepTexture = TextureAssets.Projectile[Type].Value;
+
+            SpriteEffects direction = Projectile.spriteDirection > 0 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+
+            Main.spriteBatch.Draw(sheepTexture, Vector2.One * 30f, null, Projectile.GetAlpha(Lighting.GetColor(Projectile.Center.ToTileCoordinates())), Projectile.rotation, Vector2.Zero, Projectile.scale, direction, 0f);
+
+            PreviousMainTarget.SwapToRenderTarget();
+
+            Effect afterimageShader = InfernumEffectsRegistry.AfterimageShader.GetShader().Shader;
+            afterimageShader.Parameters["screenSize"]?.SetValue(new Vector2(Main.screenWidth, Main.screenHeight));
+            afterimageShader.Parameters["time"]?.SetValue(Main.GlobalTimeWrappedHourly);
+            afterimageShader.Parameters["warpSpeed"]?.SetValue(0.0013f);
+            afterimageShader.Parameters["fadeAmount"]?.SetValue(0.82f);
+
+            Utilities.SetTexture1(InfernumTextureRegistry.HoneycombNoise.Value);
+            Utilities.SetTexture2(sheepTexture);
+
+            afterimageShader.CurrentTechnique.Passes[0].Apply();
+            Main.spriteBatch.Draw(MainTarget, Vector2.Zero, Color.White);
+
+            Main.spriteBatch.End();
+            Main.instance.GraphicsDevice.SetRenderTarget(null);
+        }
+
+        public override bool PreDraw(ref Color lightColor)
+        {
+            if (Main.gameMenu)
+            {
+                Main.instance.LoadProjectile(Type);
+                Texture2D sheepTexture = TextureAssets.Projectile[Type].Value;
+                SpriteEffects direction = Projectile.spriteDirection > 0 ? SpriteEffects.None : SpriteEffects.FlipHorizontally;
+
+                Main.spriteBatch.Draw(sheepTexture, Projectile.Center - Main.screenPosition, null, Projectile.GetAlpha(lightColor), Projectile.rotation, sheepTexture.Size() * 0.5f, Projectile.scale, direction, 0);
+                return false;
+            }
+            Main.spriteBatch.Draw(PreviousMainTarget, Projectile.Center - new Vector2(98f, 128f) - Main.screenPosition, Color.White);
+            return false;
         }
     }
 }

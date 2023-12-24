@@ -1,14 +1,17 @@
 ﻿using CalamityMod;
 using CalamityMod.Items.DraedonMisc;
+using CalamityMod.Items.Mounts;
 using CalamityMod.NPCs.ExoMechs;
 using CalamityMod.NPCs.NormalNPCs;
 using CalamityMod.Particles;
 using InfernumMode.Assets.Effects;
 using InfernumMode.Assets.ExtraTextures;
 using InfernumMode.Assets.Sounds;
+using InfernumMode.Common.DataStructures;
 using InfernumMode.Common.Graphics.Particles;
 using InfernumMode.Common.Graphics.Primitives;
 using InfernumMode.Content.Items.Misc;
+using InfernumMode.Core.GlobalInstances.Players;
 using InfernumMode.Core.GlobalInstances.Systems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -134,50 +137,7 @@ namespace InfernumMode.Content.Projectiles
 
         public Player Owner => Main.player[Projectile.owner];
 
-        public List<MatrixUIIcon> UIStates = new()
-        {
-            new()
-            {
-                HoverText = "Toggle cybernetic immortality",
-                IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/CyborgImmortalityIcon"),
-                ClickBehavior = player => player.Infernum_Immortality().ToggleImmortality()
-            },
-
-            new()
-            {
-                HoverText = "Toggle physics defiance flying",
-                IconTexture = ModContent.Request<Texture2D>("CalamityMod/Items/Mounts/ExoThrone"),
-                ClickBehavior = player => player.Infernum_PhysicsDefiance().ToggleEffect()
-            },
-
-            new()
-            {
-                HoverText = "Accelerate time until sunrise",
-                IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/SunriseIcon"),
-                ClickBehavior = _ => HyperplaneMatrixTimeChangeSystem.ApproachTime(1, true)
-            },
-
-            new()
-            {
-                HoverText = "Accelerate time until noon",
-                IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/NoonIcon"),
-                ClickBehavior = _ => HyperplaneMatrixTimeChangeSystem.ApproachTime(27000, true)
-            },
-
-            new()
-            {
-                HoverText = "Accelerate time until sunset",
-                IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/SunsetIcon"),
-                ClickBehavior = _ => HyperplaneMatrixTimeChangeSystem.ApproachTime(1, false)
-            },
-
-            new()
-            {
-                HoverText = "Atomize every single hostile NPC",
-                IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/AtomizeIcon"),
-                ClickBehavior = _ => AtomizeHostileNPCs()
-            }
-        };
+        internal static List<MatrixUIIcon> UIStates;
 
         public ref float Time => ref Projectile.ai[0];
 
@@ -191,7 +151,95 @@ namespace InfernumMode.Content.Projectiles
 
         public const float MaxHologramHeight = 304f;
 
-        // public override void SetStaticDefaults() => DisplayName.SetDefault("Hyperplane Matrix");
+        public override void SetStaticDefaults()
+        {
+            UIStates = new()
+            {
+                new()
+                {
+                    HoverText = Utilities.GetLocalization("UI.HyperplaneMatrixUI.Godmode").Value,
+                    IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/CyborgImmortalityIcon"),
+                    ClickBehavior = (Player player) =>
+                    {
+                        Referenced<bool> cyberneticImmortality = player.Infernum().GetRefValue<bool>("CyberneticImmortalityIsActive");
+                        cyberneticImmortality.Value = !cyberneticImmortality.Value;
+                        CalamityUtils.DisplayLocalizedText($"Mods.InfernumMode.Status.CyberneticImmortality{(cyberneticImmortality.Value ? "Enabled" : "Disabled")}", Draedon.TextColor);
+                    }
+                },
+
+                new()
+                {
+                    HoverText = Utilities.GetLocalization("UI.HyperplaneMatrixUI.NoClip").Value,
+                    IconTexture = ModContent.Request<Texture2D>("CalamityMod/Items/Mounts/ExoThrone"),
+                    ClickBehavior = player => player.Infernum().SetValue<bool>("PhysicsDefianceIsEnabled", !player.Infernum().GetValue<bool>("PhysicsDefianceIsEnabled"))
+                },
+
+                new()
+                {
+                    HoverText = Utilities.GetLocalization("UI.HyperplaneMatrixUI.TimeSetMorning").Value,
+                    IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/SunriseIcon"),
+                    ClickBehavior = _ => HyperplaneMatrixTimeChangeSystem.ApproachTime(1, true)
+                },
+
+                new()
+                {
+                    HoverText = Utilities.GetLocalization("UI.HyperplaneMatrixUI.TimeSetNoon").Value,
+                    IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/NoonIcon"),
+                    ClickBehavior = _ => HyperplaneMatrixTimeChangeSystem.ApproachTime(27000, true)
+                },
+
+                new()
+                {
+                    HoverText = Utilities.GetLocalization("UI.HyperplaneMatrixUI.TimeSetDusk").Value,
+                    IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/SunsetIcon"),
+                    ClickBehavior = _ => HyperplaneMatrixTimeChangeSystem.ApproachTime(1, false)
+                },
+
+                new()
+                {
+                    HoverText = Utilities.GetLocalization("UI.HyperplaneMatrixUI.Butcher").Value,
+                    IconTexture = ModContent.Request<Texture2D>("InfernumMode/Content/Projectiles/AtomizeIcon"),
+                    ClickBehavior = _ => AtomizeHostileNPCs()
+                }
+            };
+
+            InfernumPlayer.MovementUpdateEvent += (InfernumPlayer player) =>
+            {
+                // Remove acceleration when in physics defiance mode.
+                if (!player.GetValue<bool>("PhysicsDefianceIsEnabled") || player.Player.grappling[0] >= 0 || player.Player.mount.Active)
+                    return;
+
+                // Grant the player infinite flight time.
+                player.Player.wingTime = player.Player.wingTimeMax;
+                player.Player.legFrame.Y = -player.Player.legFrame.Height;
+
+                float speed = DraedonGamerChairMount.MovementSpeed * 2f;
+                if (player.Player.controlLeft)
+                {
+                    player.Player.velocity.X = -speed;
+                    player.Player.direction = -1;
+                }
+                else if (player.Player.controlRight)
+                {
+                    player.Player.velocity.X = speed;
+                    player.Player.direction = 1;
+                }
+                else
+                    player.Player.velocity.X = 0f;
+
+                if (player.Player.controlUp || player.Player.controlJump)
+                    player.Player.velocity.Y = -speed;
+
+                else if (player.Player.controlDown)
+                {
+                    player.Player.velocity.Y = speed;
+                    if (Collision.TileCollision(player.Player.position, player.Player.velocity, player.Player.width, player.Player.height, true, false, (int)player.Player.gravDir).Y == 0f)
+                        player.Player.velocity.Y = 0.5f;
+                }
+                else
+                    player.Player.velocity.Y = 0f;
+            };
+        }
 
         public override void SetDefaults()
         {
@@ -315,7 +363,7 @@ namespace InfernumMode.Content.Projectiles
             }
 
             // Hurt the player.
-            var hurtReason = PlayerDeathReason.ByCustomReason($"{Owner.name} was blown up.");
+            var hurtReason = PlayerDeathReason.ByCustomReason(Utilities.GetLocalization("Status.Death.HyperplaneMatrixExplosion").Format(Owner.name));
             Owner.Hurt(hurtReason, HyperplaneMatrix.UnableToBeUsedHurtDamage, 0);
 
             // Destroy the matrix.

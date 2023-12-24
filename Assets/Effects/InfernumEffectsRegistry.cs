@@ -17,6 +17,7 @@ namespace InfernumMode.Assets.Effects
             get;
             internal set;
         }
+
         public static MiscShaderData AEWShadowFormShader => GameShaders.Misc["Infernum:AEWShadowForm"];
         public static MiscShaderData AreaBorderVertexShader => GameShaders.Misc["Infernum:AreaBorder"];
         public static MiscShaderData AresEnergySlashShader => GameShaders.Misc["Infernum:AresEnergySlash"];
@@ -68,12 +69,16 @@ namespace InfernumMode.Assets.Effects
         #endregion
 
         #region Screen Shaders
+        public static Filter AfterimageShader => Filters.Scene["InfernumMode:AfterimageShader"];
         public static Filter AresScreenShader => Filters.Scene["InfernumMode:Ares"];
         public static Filter BaseMetaballEdgeShader => Filters.Scene["InfernumMode:BaseMetaballEdgeShader"];
         public static Filter BossBarShader => Filters.Scene["InfernumMode:BossBar"];
         public static Filter CalShadowScreenShader => Filters.Scene["InfernumMode:CalShadow"];
         public static Filter CreditShader => Filters.Scene["InfernumMode:Credits"];
+        public static Filter CRTShader => Filters.Scene["InfernumMode:CRTShader"];
+        public static Filter CrystalCrackShader => Filters.Scene["InfernumMode:CrystalCrackShader"];
         public static Filter DeusScreenShader => Filters.Scene["InfernumMode:Deus"];
+        public static Filter DeusGasShader => Filters.Scene["InfernumMode:DeusGasShader"];
         public static Filter DoGPortalShader => Filters.Scene["InfernumMode:DoGPortalShader"];
         public static Filter DragonfollyScreenShader => Filters.Scene["InfernumMode:Dragonfolly"];
         public static Filter DoGScreenShader => Filters.Scene["InfernumMode:DoG"];
@@ -82,18 +87,22 @@ namespace InfernumMode.Assets.Effects
         public static Filter HiveMindScreenShader => Filters.Scene["InfernumMode:HiveMind"];
         public static Filter LightningOverlayShader => Filters.Scene["InfernumMode:LightningOverlay"];
         public static Filter MadnessScreenShader => Filters.Scene["InfernumMode:Madness"];
+        public static Filter MovieBarShader => Filters.Scene["InfernumMode:MovieBarShader"];
         public static Filter NightProviScreenShader => Filters.Scene["InfernumMode:NightProvidence"];
         public static Filter OldDukeScreenShader => Filters.Scene["InfernumMode:OldDuke"];
         public static Filter PerforatorsScreenShader => Filters.Scene["InfernumMode:Perforators"];
+        public static Filter PulseRingShader => Filters.Scene["InfernumMode:PulseRing"];
         public static Filter RaindropShader => Filters.Scene["InfernumMode:Raindrops"];
+        public static Filter SandstormShader => Filters.Scene["InfernumMode:SandstormShader"];
         public static Filter SCalScreenShader => Filters.Scene["InfernumMode:SCal"];
         public static Filter ScreenDistortionScreenShader => Filters.Scene["InfernumMode:ScreenDistortion"];
         public static Filter ScreenBorderShader => Filters.Scene["InfernumMode:ScreenBorder"];
-        public static Filter ScreenSaturationBlurScreenShader => Filters.Scene["InfernumMode:ScreenSaturationBlur"];
         public static Filter ScreenShakeScreenShader => Filters.Scene["InfernumMode:ScreenShake"];
         public static Filter ScreenShakeScreenShader2 => Filters.Scene["InfernumMode:ScreenShake2"];
+        public static Filter SpriteBurnShader => Filters.Scene["InfernumMode:SpriteBurn"];
         public static Filter ShadowShader => Filters.Scene["InfernumMode:ShadowShader"];
         public static Filter TwinsScreenShader => Filters.Scene["InfernumMode:Twins"];
+        public static Filter WaterOverlayShader => Filters.Scene["InfernumMode:WaterOverlayShader"];
         #endregion
 
         #region Methods
@@ -266,6 +275,45 @@ namespace InfernumMode.Assets.Effects
 
         public static void LoadScreenShaders(AssetRepository assets)
         {
+            Ref<Effect> waterShader = new(assets.Request<Effect>("Assets/Effects/Overlays/WaterShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:WaterOverlayShader"] = new Filter(new(waterShader, "WaterPass"), EffectPriority.VeryHigh);
+
+            // CRT shader
+            Ref<Effect> crtShader = new(assets.Request<Effect>("Assets/Effects/SpriteDistortions/CRTShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:CRTShader"] = new Filter(new(crtShader, "CRTPass"), EffectPriority.VeryHigh);
+
+            // Sandstorm shader
+            Ref<Effect> sandstormShader = new(assets.Request<Effect>("Assets/Effects/Overlays/SandstormShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:SandstormShader"] = new Filter(new(sandstormShader, "SandstormPass"), EffectPriority.VeryHigh);
+
+            // Afterimage shader
+            Ref<Effect> afterimageShader = new(assets.Request<Effect>("Assets/Effects/SpriteDistortions/AfterimageShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:AfterimageShader"] = new Filter(new(afterimageShader, "AfterimagePass"), EffectPriority.VeryHigh);
+
+            // Movie bar shader.
+            Ref<Effect> movieBarShader = new(assets.Request<Effect>("Assets/Effects/Overlays/MovieBarShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:MovieBarShader"] = new Filter(new(movieBarShader, "BarPass"), EffectPriority.VeryHigh);
+
+            // Astral Dimension.
+            Filters.Scene["InfernumMode:AstralDimension"] = new Filter(new PerforatorScreenShaderData("FilterMiniTower").UseColor(0f, 0f, 0f).UseOpacity(0f), EffectPriority.VeryHigh);
+            SkyManager.Instance["InfernumMode:AstralDimension"] = new AstralDimensionSky();
+
+            // Deus gas shader.
+            Ref<Effect> deusGasShader = new(assets.Request<Effect>("Assets/Effects/Overlays/DeusGasShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:DeusGasShader"] = new Filter(new(deusGasShader, "GasPass"), EffectPriority.VeryHigh);
+
+            // Sprite burn shader.
+            Ref<Effect> spriteBurnShader = new(assets.Request<Effect>("Assets/Effects/SpriteDistortions/SpriteBurnShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:SpriteBurn"] = new Filter(new(spriteBurnShader, "BurnPass"), EffectPriority.VeryHigh);
+
+            // Pulse ring shader.
+            Ref<Effect> pulseRingShader = new(assets.Request<Effect>("Assets/Effects/Shapes/PulseRing", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:PulseRing"] = new Filter(new(pulseRingShader, "PulsePass"), EffectPriority.VeryHigh);
+
+            // Crystal crack shader.
+            Ref<Effect> crystalCrackShader = new(assets.Request<Effect>("Assets/Effects/Cutouts/CrystalCrackShader", AssetRequestMode.ImmediateLoad).Value);
+            Filters.Scene["InfernumMode:CrystalCrackShader"] = new Filter(new(crystalCrackShader, "CrackPass"), EffectPriority.VeryHigh);
+
             // DoG portal shader.
             Ref<Effect> dogPortalShader = new(assets.Request<Effect>("Assets/Effects/Shapes/DoGPortalShader", AssetRequestMode.ImmediateLoad).Value);
             Filters.Scene["InfernumMode:DoGPortalShader"] = new Filter(new(dogPortalShader, "PortalPass"), EffectPriority.VeryHigh);
@@ -374,10 +422,6 @@ namespace InfernumMode.Assets.Effects
             // Perforators (death animation).
             Filters.Scene["InfernumMode:Perforators"] = new Filter(new PerforatorScreenShaderData("FilterMiniTower").UseColor(new Color(255, 60, 30)).UseOpacity(0.445f), EffectPriority.VeryHigh);
             SkyManager.Instance["InfernumMode:Perforators"] = new PerforatorSky();
-
-            // Screen saturation blur system shader.
-            Ref<Effect> screenSaturationBlurShader = new(assets.Request<Effect>("Assets/Effects/Overlays/ScreenSaturationBlurShader", AssetRequestMode.ImmediateLoad).Value);
-            Filters.Scene["InfernumMode:ScreenSaturationBlur"] = new Filter(new ScreenSaturationBlurShaderData(screenSaturationBlurShader, "ScreenPass"), EffectPriority.VeryHigh);
 
             // Supreme Calamitas.
             Filters.Scene["InfernumMode:SCal"] = new Filter(new SCalScreenShaderData(fireBGShader, "DyePass").UseColor(0.3f, 0f, 0f).UseOpacity(0.5f), EffectPriority.VeryHigh);

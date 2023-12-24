@@ -80,8 +80,8 @@ namespace InfernumMode.Content.BehaviorOverrides.AbyssAIs
                 return false;
             }
 
-            // Despawn if the player has left the final layer of the abyss.
-            if (!target.Calamity().ZoneAbyssLayer4)
+            // Despawn if the player has left the final layer of the abyss or is dead.
+            if (!target.Calamity().ZoneAbyssLayer4 || target.dead)
             {
                 npc.velocity = Vector2.Lerp(npc.velocity, Vector2.UnitY * 27f, 0.1f);
                 if (!npc.WithinRange(target.Center, 1200f))
@@ -170,12 +170,7 @@ namespace InfernumMode.Content.BehaviorOverrides.AbyssAIs
 
             // Update played sounds.
             if (SoundEngine.TryGetActiveSound(SlotId.FromFloat(soundSlotID), out ActiveSound result))
-            {
-                float lowPassFilter = Utils.GetLerpValue(1400f, 460f, teleportOffset, true) * 0.8f + 0.05f;
-                result.Sound.SetLowPassFilter(lowPassFilter);
-                result.Sound.SetReverb(1f - lowPassFilter);
                 result.Position = target.Center;
-            }
 
             // Decide the eye opacity.
             eyeOpacity = Utils.GetLerpValue(delayBetweenTeleports - 20f, delayBetweenTeleports - 50f, nextTeleportDelay, true) * Utils.GetLerpValue(4f, 54f, nextTeleportDelay, true);

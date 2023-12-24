@@ -1,10 +1,10 @@
 ﻿using CalamityMod;
 using CalamityMod.Buffs.StatBuffs;
-using CalamityMod.UI;
+using InfernumMode.Assets.Fonts;
+using InfernumMode.Content.BossIntroScreens.InfernumScreens;
 using InfernumMode.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using ReLogic.Graphics;
 using System.Globalization;
 using System.Linq;
 using Terraria;
@@ -16,7 +16,7 @@ using Terraria.UI.Chat;
 
 namespace InfernumMode.Content.BossIntroScreens
 {
-    public abstract class BaseIntroScreen
+    public abstract class BaseIntroScreen : ModType
     {
         public int AnimationTimer;
 
@@ -45,8 +45,6 @@ namespace InfernumMode.Content.BossIntroScreens
 
         public static float AspectRatioFactor => Main.screenHeight / 1440f;
 
-        public static DynamicSpriteFont FontToUse => BossHealthBarManager.HPBarFont;
-
         public Vector2 DrawPosition => BaseDrawPosition;
 
         public virtual float TextScale => MinorBossTextScale;
@@ -73,9 +71,19 @@ namespace InfernumMode.Content.BossIntroScreens
 
         public virtual LocalizedText TextToDisplay => GetLocalizedText("TextToDisplay");
 
-        public abstract bool ShouldBeActive();
-
         public abstract SoundStyle? SoundToPlayWithTextCreation { get; }
+
+        protected sealed override void Register()
+        {
+            ModTypeLookup<BaseIntroScreen>.Register(this);
+
+            if (!IntroScreenManager.IntroScreens.Contains(this))
+                IntroScreenManager.IntroScreens.Add(this);
+        }
+
+        public sealed override void SetupContent() => SetStaticDefaults();
+
+        public abstract bool ShouldBeActive();
 
         public virtual void DoCompletionEffects() { }
 
@@ -95,7 +103,7 @@ namespace InfernumMode.Content.BossIntroScreens
                 DoCompletionEffects();
             }
 
-            if (Main.netMode == NetmodeID.Server || AnimationTimer <= 0 || AnimationTimer >= AnimationTime || notInvolvedWithBoss)
+            if (Main.netMode == NetmodeID.Server || AnimationTimer <= 0 || AnimationTimer >= AnimationTime || notInvolvedWithBoss && !ShouldBeActive())
             {
                 if (AnimationTimer < AnimationTime)
                     AnimationTimer = 0;
@@ -148,15 +156,15 @@ namespace InfernumMode.Content.BossIntroScreens
         {
             string suffix = $"IntroScreen.{GetType().Name}";
             string localizationKey = $"{suffix}.{key}";
-            
+
             return Utilities.GetLocalization(localizationKey);
         }
-        
-        
+
+
         internal Vector2 CalculateOffsetOfCharacter(string character)
         {
             float extraOffset = character.ToLower(CultureInfo.InvariantCulture) == "i" ? 9f : 0f;
-            return Vector2.UnitX * (FontToUse.MeasureString(character).X + extraOffset + 10f) * AspectRatioFactor * TextScale;
+            return Vector2.UnitX * (InfernumFontRegistry.BossIntroScreensFont.MeasureString(character).X + extraOffset + 10f) * AspectRatioFactor * TextScale;
         }
 
         public virtual void DrawText(SpriteBatch sb)
@@ -206,8 +214,8 @@ namespace InfernumMode.Content.BossIntroScreens
 
                     if (ShaderToApplyToLetters != null)
                     {
-                        ShaderToApplyToLetters.Parameters["uTime"].SetValue(Main.GlobalTimeWrappedHourly);
-                        ShaderToApplyToLetters.Parameters["uLetterCompletionRatio"].SetValue(individualLineLetterCompletionRatio);
+                        ShaderToApplyToLetters.Parameters["uTime"]?.SetValue(Main.GlobalTimeWrappedHourly);
+                        ShaderToApplyToLetters.Parameters["uLetterCompletionRatio"]?.SetValue(individualLineLetterCompletionRatio);
                         PrepareShader(ShaderToApplyToLetters);
                         ShaderToApplyToLetters.CurrentTechnique.Passes[0].Apply();
                     }
@@ -217,7 +225,7 @@ namespace InfernumMode.Content.BossIntroScreens
                     offset += CalculateOffsetOfCharacter(character) * (useBigText ? BottomTextScale : 1f);
 
                     Color textColor = TextColor.Calculate(individualLineLetterCompletionRatio) * opacity;
-                    Vector2 origin = Vector2.UnitX * FontToUse.MeasureString(character);
+                    Vector2 origin = Vector2.UnitX * InfernumFontRegistry.BossIntroScreensFont.MeasureString(character);
 
                     // Draw afterimage instances of the the text.
                     for (int k = 0; k < 4; k++)
@@ -226,13 +234,13 @@ namespace InfernumMode.Content.BossIntroScreens
                         float afterimageOpacity = Pow(afterimageOpacityInterpolant, 2f) * 0.3f;
                         Color afterimageColor = textColor * afterimageOpacity;
                         Vector2 drawOffset = (TwoPi * k / 4f).ToRotationVector2() * (1f - afterimageOpacityInterpolant) * 30f;
-                        ChatManager.DrawColorCodedStringShadow(sb, FontToUse, character, DrawPosition + drawOffset + offset, Color.Black * afterimageOpacity * opacity, 0f, origin, textScale, -1, 1.5f);
-                        ChatManager.DrawColorCodedString(sb, FontToUse, character, DrawPosition + drawOffset + offset, afterimageColor, 0f, origin, textScale);
+                        ChatManager.DrawColorCodedStringShadow(sb, InfernumFontRegistry.BossIntroScreensFont, character, DrawPosition + drawOffset + offset, Color.Black * afterimageOpacity * opacity, 0f, origin, textScale, -1, 1.5f);
+                        ChatManager.DrawColorCodedString(sb, InfernumFontRegistry.BossIntroScreensFont, character, DrawPosition + drawOffset + offset, afterimageColor, 0f, origin, textScale);
                     }
 
                     // Draw the base text.
-                    ChatManager.DrawColorCodedStringShadow(sb, FontToUse, character, DrawPosition + offset, Color.Black * opacity, 0f, origin, textScale, -1, 1.5f);
-                    ChatManager.DrawColorCodedString(sb, FontToUse, character, DrawPosition + offset, textColor, 0f, origin, textScale);
+                    ChatManager.DrawColorCodedStringShadow(sb, InfernumFontRegistry.BossIntroScreensFont, character, DrawPosition + offset, Color.Black * opacity, 0f, origin, textScale, -1, 1.5f);
+                    ChatManager.DrawColorCodedString(sb, InfernumFontRegistry.BossIntroScreensFont, character, DrawPosition + offset, textColor, 0f, origin, textScale);
 
                     // Increment the absolute letter counter.
                     absoluteLetterCounter++;
@@ -245,7 +253,7 @@ namespace InfernumMode.Content.BossIntroScreens
             if (Main.netMode == NetmodeID.Server)
                 return;
 
-            if (!ShouldBeActive() || !InfernumMode.CanUseCustomAIs || !InfernumConfig.Instance.BossIntroductionAnimationsAreAllowed)
+            if (!ShouldBeActive() || !InfernumConfig.Instance.BossIntroductionAnimationsAreAllowed)
             {
                 AnimationTimer = 0;
                 HasPlayedMainSound = false;

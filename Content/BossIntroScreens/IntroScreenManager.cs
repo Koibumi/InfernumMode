@@ -1,9 +1,7 @@
 ﻿using CalamityMod.Events;
 using InfernumMode.Core;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -26,18 +24,6 @@ namespace InfernumMode.Content.BossIntroScreens
                 int introTextDisplayChance = Utilities.IsAprilFirst() ? 5 : 500;
                 return Main.rand.NextBool(introTextDisplayChance);
             }
-        }
-
-        public override void OnModLoad()
-        {
-            IntroScreens = new List<BaseIntroScreen>();
-            foreach (Type introScreen in InfernumMode.Instance.Code.GetTypes().Where(t => !t.IsAbstract && t.IsSubclassOf(typeof(BaseIntroScreen))))
-                IntroScreens.Add(FormatterServices.GetUninitializedObject(introScreen) as BaseIntroScreen);
-        }
-
-        public override void Unload()
-        {
-            IntroScreens = null;
         }
 
         public static void UpdateScreens()

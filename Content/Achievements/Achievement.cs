@@ -6,23 +6,34 @@ using Terraria.ModLoader.IO;
 
 namespace InfernumMode.Content.Achievements
 {
+    // Ideally these would use modtypes, but I don't know what I was smoking when loading these and I don't feel like remaking it.
     public abstract class Achievement
     {
         #region Fields
         internal int PositionInMainList;
         
         public int TotalCompletion = 1;
+
         public int CurrentCompletion;
+
         public bool DoneCompletionEffects;
+
         public AchievementUpdateCheck UpdateCheck;
+
         public bool IsDevWish;
         #endregion
 
         #region Properties
         public LocalizedText DisplayName => GetLocalizedText(nameof(DisplayName));
+
         public virtual LocalizedText Description => GetLocalizedText(nameof(Description));
+
         public virtual string LocalizationCategory => "Achievements";
+
+        public virtual bool ObtainableDuringBossRush => false;
+
         public float CompletionRatio => CurrentCompletion / (float)TotalCompletion;
+
         public bool IsCompleted => CurrentCompletion >= TotalCompletion;
         #endregion
 
@@ -33,7 +44,7 @@ namespace InfernumMode.Content.Achievements
         public virtual void OnCompletion(Player player)
         {
             AchievementsNotificationTracker.AddAchievementAsCompleted(this);
-            Main.NewText(Utilities.GetLocalization("Status.AchievementCompletionText").WithFormatArgs(DisplayName.ToString()));
+            Main.NewText(Utilities.GetLocalization("Status.AchievementCompletionText") + $"[c/ff884d: {DisplayName.Value}]");
             SoundEngine.PlaySound(InfernumSoundRegistry.InfernumAchievementCompletionSound);
         }
 
@@ -56,6 +67,7 @@ namespace InfernumMode.Content.Achievements
         {
 
         }
+
         /// <summary>
         /// Load the completion amount and DoneCompletionEffects here. Called from ModPlayer.LoadData(TagCompound tag).
         /// </summary>
@@ -91,7 +103,7 @@ namespace InfernumMode.Content.Achievements
         protected void WishCompletionEffects(Player player, int assosiatedItemType)
         {
             AchievementsNotificationTracker.AddAchievementAsCompleted(this);
-            Main.NewText(Utilities.GetLocalization("Status.AchievementCompletionText") + $"[c/ff884d: {DisplayName.Value}");
+            Main.NewText(Utilities.GetLocalization("Status.AchievementCompletionText") + $"[c/ff884d: {DisplayName.Value}]");
             SoundEngine.PlaySound(InfernumSoundRegistry.InfernumAchievementCompletionSound);
             player.QuickSpawnItem(Entity.GetSource_None(), assosiatedItemType, 1);
         }

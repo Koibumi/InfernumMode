@@ -155,9 +155,6 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Draedon.Thanatos
             ref float secondComboPhaseResistanceBoostFlag = ref npc.Infernum().ExtraAI[17];
             ref float deathAnimationTimer = ref npc.Infernum().ExtraAI[ExoMechManagement.DeathAnimationTimerIndex];
 
-            // Use the screen saturation effect.
-            npc.Infernum().ShouldUseSaturationBlur = true;
-
             NPC initialMech = ExoMechManagement.FindInitialMech();
             NPC complementMech = complementMechIndex >= 0 && Main.npc[(int)complementMechIndex].active && Utilities.IsExoMech(Main.npc[(int)complementMechIndex]) ? Main.npc[(int)complementMechIndex] : null;
             NPC finalMech = ExoMechManagement.FindFinalMech();
@@ -657,6 +654,9 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.Draedon.Thanatos
                 lasersPerRotor++;
                 finalChargeSpeed += 3f;
             }
+
+            // Don't deal damage because its apparently really annoying to dodge even though its half the damn attack.
+            npc.damage = 0;
 
             // Approach the player at an increasingly slow speed.
             if (attackTimer < slowdownTime)

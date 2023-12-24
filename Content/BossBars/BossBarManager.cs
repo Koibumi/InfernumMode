@@ -6,12 +6,9 @@ using CalamityMod.UI;
 using InfernumMode.Core.OverridingSystem;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
-using ReLogic.Graphics;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
-using Terraria.GameContent;
 using Terraria.GameContent.Events;
 using Terraria.GameContent.UI.BigProgressBar;
 using Terraria.ID;
@@ -33,7 +30,11 @@ namespace InfernumMode.Content.BossBars
         // Store phase information for every boss, by type.
         internal static Dictionary<int, BossPhaseInfo> PhaseInfos;
 
-        public static DynamicSpriteFont BarFont { get; private set; }
+        internal static Dictionary<int, BossPhaseInfo> ModCallPhaseInfos;
+
+        internal static Dictionary<int, Texture2D> ModCallBossIcons;
+
+        internal static List<int> ModCallNPCsThatCanHaveAHPBar;
 
         public static Texture2D BarFrame { get; private set; }
 
@@ -67,16 +68,9 @@ namespace InfernumMode.Content.BossBars
         public override void Load()
         {
             ActiveBossBars = new();
-
-            if (!Main.dedServ)
-            {
-                // This was crashing on Linux and such in Calamity, I am unable to check if it will here so I am playing it safe and only allowing custom fonts to work on Windows.
-                if ((int)Environment.OSVersion.Platform == 2)
-                    BarFont = ModContent.Request<DynamicSpriteFont>("InfernumMode/Assets/Fonts/HPBarFont", AssetRequestMode.ImmediateLoad).Value;
-                else
-                    // If not the correct OS, we need to make it the default Terraria Font, Andy.
-                    BarFont = FontAssets.MouseText.Value;
-            }
+            ModCallPhaseInfos = new();
+            ModCallBossIcons = new();
+            ModCallNPCsThatCanHaveAHPBar = new();
 
             if (Main.netMode != NetmodeID.Server)
             {
@@ -100,7 +94,9 @@ namespace InfernumMode.Content.BossBars
         {
             ActiveBossBars = null;
             PhaseInfos = null;
-            BarFont = null;
+            ModCallPhaseInfos = null;
+            ModCallBossIcons = null;
+            ModCallNPCsThatCanHaveAHPBar = null;
             BarFrame = null;
             MainBarTip = null;
             MinionBarTip = null;
@@ -131,7 +127,7 @@ namespace InfernumMode.Content.BossBars
                     if (Main.npc[j].TryGetGlobalNPC<CalamityGlobalNPC>(out var result))
                         canHaveHpBar = result.CanHaveBossHealthBar;
 
-                    if ((Main.npc[j].IsABoss() && !isEoWSegment) || BossHealthBarManager.MinibossHPBarList.Contains(Main.npc[j].type) || canHaveHpBar)
+                    if ((Main.npc[j].IsABoss() && !isEoWSegment) || BossHealthBarManager.MinibossHPBarList.Contains(Main.npc[j].type) || canHaveHpBar || ModCallNPCsThatCanHaveAHPBar.Contains(Main.npc[j].type))
                         AddBar(j);
                 }
             }
@@ -152,10 +148,11 @@ namespace InfernumMode.Content.BossBars
             int startHeight = 100;
             int x = Main.screenWidth - 220;
             int y = Main.screenHeight - startHeight;
+
+            // Shove the bar to the left a bit if anything is taking up the default position.
             if (Main.playerInventory || Main.invasionType > 0 || Main.pumpkinMoon || Main.snowMoon || DD2Event.Ongoing || AcidRainEvent.AcidRainEventIsOngoing)
-            {
                 x -= 250;
-            }
+
             foreach (BaseBossBar bar in ActiveBossBars)
             {
                 bar.Draw(spriteBatch, x, y);
@@ -165,6 +162,7 @@ namespace InfernumMode.Content.BossBars
         #endregion
 
         #region Methods
+        // This is seperate to the provided Load hook due to requiring the NPCBehaviorOverrides to be loaded beforehand.
         internal static void LoadPhaseInfo()
         {
             PhaseInfos = new();
@@ -173,7 +171,7 @@ namespace InfernumMode.Content.BossBars
             {
                 NPCBehaviorOverride behaviorOverride = behaviorOverridePair.Value;
                 List<float> phaseThresholds = behaviorOverride.PhaseLifeRatioThresholds.ToList();
-                // Add 1, or 100% to the start.
+                // Add 1 (100%) to the start, as none of them include that.
                 phaseThresholds.Insert(0, 1f);
                 PhaseInfos.Add(behaviorOverride.NPCOverrideType, new(behaviorOverride.NPCOverrideType, phaseThresholds));
             }
@@ -187,6 +185,9 @@ namespace InfernumMode.Content.BossBars
             NPC npc = Main.npc[npcIndex];
             bool canAddBar = npc.active && npc.life > 0 && ActiveBossBars.All((BaseBossBar b) => b.NPCIndex != npcIndex) && !npc.Calamity().ShouldCloseHPBar;
 
+            // Not ideal. The Exo Twins have a singular HP bar, and having to hardcode check that here is annoying.
+            // TODO: Is this needed? Was taken from Calamity's bar without checking, but it seems weird that they are the only instance
+            // where this is required.
             if (npc.type == ModContent.NPCType<Artemis>() || !canAddBar)
                 return;
 

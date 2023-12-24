@@ -1,6 +1,5 @@
 ﻿using InfernumMode.Content.Rarities.Sparkles;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using Terraria.ModLoader;
 
@@ -11,8 +10,6 @@ namespace InfernumMode.Content.Rarities.InfernumRarities
         public override Color RarityColor => new(75, 38, 158);
 
         internal static List<RaritySparkle> BookSymbols = new();
-
-        public static Texture2D SymbolTexture => ModContent.Request<Texture2D>("InfernumMode/Content/Rarities/Textures/Book").Value;
 
         public static void DrawCustomTooltipLine(DrawableTooltipLine tooltipLine)
         {

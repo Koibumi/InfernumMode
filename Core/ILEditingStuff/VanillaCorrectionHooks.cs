@@ -11,6 +11,7 @@ using CalamityMod.NPCs.DesertScourge;
 using CalamityMod.NPCs.ExoMechs;
 using CalamityMod.NPCs.ProfanedGuardians;
 using CalamityMod.NPCs.SlimeGod;
+using CalamityMod.Projectiles.Enemy;
 using CalamityMod.Schematics;
 using CalamityMod.Skies;
 using CalamityMod.Systems;
@@ -25,7 +26,6 @@ using InfernumMode.Content.Tiles.Relics;
 using InfernumMode.Content.UI;
 using InfernumMode.Content.WorldGeneration;
 using InfernumMode.Core.Balancing;
-using InfernumMode.Core.GlobalInstances.Players;
 using InfernumMode.Core.GlobalInstances.Systems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -372,7 +372,7 @@ namespace InfernumMode.Core.ILEditingStuff
             {
                 if (StolenCelestialObject.MoonIsNotInSky)
                     return;
-                else if (!Main.gameMenu && Main.LocalPlayer.GetModPlayer<FlowerOceanPlayer>().VisualsActive)
+                else if (!Main.gameMenu && Main.LocalPlayer.Infernum().GetValue<bool>("FlowerOceanVisualsActive"))
                     return;
             }
 
@@ -980,7 +980,7 @@ namespace InfernumMode.Core.ILEditingStuff
             cursor.Emit(OpCodes.Ldloc, 6);
             cursor.EmitDelegate<Func<Vector2, Vector2>>(unclampedValue =>
             {
-                unclampedValue.X = Clamp(unclampedValue.X, CustomAbyss.MaxAbyssWidth + 150, Main.maxTilesX - CustomAbyss.MaxAbyssWidth - 150);
+                unclampedValue.X = Clamp(unclampedValue.X, CustomAbyss.MaxAbyssWidth + 1000, Main.maxTilesX - CustomAbyss.MaxAbyssWidth - 1000);
                 return unclampedValue;
             });
             cursor.Emit(OpCodes.Stloc, 6);
@@ -1257,7 +1257,7 @@ namespace InfernumMode.Core.ILEditingStuff
         private void DrawStarsHook(On_Main.orig_DrawStarsInBackground orig, Main self, Main.SceneArea sceneArea, bool artificial)
         {
             // Do not draw if the flower ocean visuals are active.
-            if (!Main.gameMenu && Main.LocalPlayer.GetModPlayer<FlowerOceanPlayer>().VisualsActive)
+            if (!Main.gameMenu && Main.LocalPlayer.Infernum().GetValue<bool>("FlowerOceanVisualsActive"))
                 return;
 
             orig(self, sceneArea, artificial);
@@ -1289,7 +1289,7 @@ namespace InfernumMode.Core.ILEditingStuff
         {
             orig(npc, ref typeName);
             if (npc.type == ModContent.NPCType<CalamitasClone>() && InfernumMode.CanUseCustomAIs)
-                typeName = $"The {CalamitasShadowBehaviorOverride.CustomName}";
+                typeName = Utilities.GetLocalization("NameOverrides.CalamitasShadowClone.EntryName").Format(CalamitasShadowBehaviorOverride.CustomName);
         }
     }
 
@@ -1319,18 +1319,78 @@ namespace InfernumMode.Core.ILEditingStuff
         public void Unload() => IL_MoonlordDeathDrama.DrawWhite -= IL_MoonlordDeathDrama_DrawWhite;
 
         // Do NOT remove this method, despite its 0 references it is used by IL.
-        public static Color DrawColor() => InfernumConfig.Instance.FlashbangOverlays ? Color.White : new Color(5, 5, 5);
+        public static Color DrawColor() => InfernumConfig.Instance.FlashbangOverlays ? Color.White : Color.Black;
 
         private void IL_MoonlordDeathDrama_DrawWhite(ILContext il)
         {
             ILCursor cursor = new(il);
 
-            // Replace the white color with a gray one, if the flashbang config is disbaled.
+            // Replace the white color with a black one, if the flashbang config is disbaled.
             if (cursor.TryGotoNext(MoveType.After, i => i.MatchCall<Color>("get_White")))
             {
                 cursor.Emit(OpCodes.Pop);
                 cursor.EmitCall(typeof(AntiFlashbangSupportHook).GetMethod("DrawColor", Utilities.UniversalBindingFlags));
             }
+        }
+    }
+
+    public class VanillaProjectileImmunitySlotHook : IHookEdit
+    {
+        public static List<int> VanillaBossProjectiles => new()
+        {
+            ProjectileID.QueenBeeStinger,
+            ProjectileID.DeathLaser,
+            ProjectileID.EyeLaser,
+            ProjectileID.Skull,
+            ProjectileID.SeedPlantera,
+            ProjectileID.PoisonSeedPlantera,
+            ProjectileID.MartianTurretBolt,
+            // It shouldn't really be using this but Giant Clam has a lot worse issues than this.
+            ModContent.ProjectileType<PearlRain>()
+        };
+
+        // IDK why she uses normal stingers for some atttacks but I'd rather do this than change it now.
+        public static readonly Dictionary<int, Func<bool>> VanillaProjectilesWithConditions = new()
+        {
+            [ProjectileID.Stinger] = () => { return NPC.AnyNPCs(NPCID.QueenBee); }
+        };
+
+        public static bool ConvertNextNonPVPHurtImmuneSlot
+        {
+            get;
+            private set;
+        }
+
+        public void Load()
+        {
+            On_Projectile.Damage += CheckProjectile;
+            On_Player.Hurt_PlayerDeathReason_int_int_refHurtInfo_bool_bool_int_bool_float_float_float += HurtDetour;
+        }
+
+        public void Unload()
+        {
+            On_Projectile.Damage -= CheckProjectile;
+            On_Player.Hurt_PlayerDeathReason_int_int_refHurtInfo_bool_bool_int_bool_float_float_float -= HurtDetour;
+        }
+
+        private double HurtDetour(On_Player.orig_Hurt_PlayerDeathReason_int_int_refHurtInfo_bool_bool_int_bool_float_float_float orig, Player self, PlayerDeathReason damageSource, int Damage, int hitDirection, out Player.HurtInfo info, bool pvp, bool quiet, int cooldownCounter, bool dodgeable, float armorPenetration, float scalingArmorPenetration, float knockback)
+        {
+            // If marked as ready, convert the cooldown slot to be the correct one.
+            if (!pvp && ConvertNextNonPVPHurtImmuneSlot)
+                cooldownCounter = ImmunityCooldownID.Bosses;
+
+            return orig(self, damageSource, Damage, hitDirection, out info, pvp, quiet, cooldownCounter, dodgeable, armorPenetration, scalingArmorPenetration, knockback);
+        }
+
+        private void CheckProjectile(On_Projectile.orig_Damage orig, Projectile self)
+        {
+            // If the current projectile is in the list, mark the conversion as ready.
+            if (VanillaBossProjectiles.Contains(self.type) || (VanillaProjectilesWithConditions.TryGetValue(self.type, out var condition) && condition()))
+                ConvertNextNonPVPHurtImmuneSlot = true;
+
+            // The hurt detour is ran in orig, so restore it to false after it has ran.
+            orig(self);
+            ConvertNextNonPVPHurtImmuneSlot = false;
         }
     }
 }

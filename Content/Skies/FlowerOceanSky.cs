@@ -1,7 +1,8 @@
 ﻿using InfernumMode.Assets.Effects;
 using InfernumMode.Assets.ExtraTextures;
+using InfernumMode.Common.Graphics.ScreenEffects;
 using InfernumMode.Content.Projectiles.Wayfinder;
-using InfernumMode.Core.GlobalInstances.Players;
+using InfernumMode.Core;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
@@ -21,7 +22,7 @@ namespace InfernumMode.Content.Skies
 
         public override bool IsSceneEffectActive(Player player)
         {
-            return player.GetModPlayer<FlowerOceanPlayer>().VisualsActive;
+            return player.Infernum().GetValue<bool>("FlowerOceanVisualsActive");
         }
 
         public override void SpecialVisuals(Player player, bool isActive)
@@ -127,7 +128,7 @@ namespace InfernumMode.Content.Skies
 
             Main.windSpeedTarget = 0f;
 
-            if (!Main.LocalPlayer.GetModPlayer<FlowerOceanPlayer>().VisualsActive || Main.dayTime)
+            if (!Main.LocalPlayer.Infernum().GetValue<bool>("FlowerOceanVisualsActive") || Main.dayTime)
             {
                 isActive = false;
                 if (intensity <= 0)
@@ -138,7 +139,11 @@ namespace InfernumMode.Content.Skies
         public override void Draw(SpriteBatch spriteBatch, float minDepth, float maxDepth)
         {
             // Only draw at night time.
-            if (Main.dayTime && intensity <= 0)
+            if (Main.dayTime)
+                return;
+
+            // If either of these are drawing, don't.
+            if (AstralDimensionSystem.MonolithIntensity >= 1f || CosmicBackgroundSystem.MonolithIntensity >= 1f)
                 return;
 
             // Draw the sky and moon.
@@ -184,7 +189,7 @@ namespace InfernumMode.Content.Skies
 
         private void DrawRays(SpriteBatch spriteBatch)
         {
-            float maxRays = 60f;
+            int maxRays = InfernumConfig.Instance.ReducedGraphicsConfig ? 45 : 60;
             // Randomly spawn light rays under the moon.
             if (Main.rand.NextBool(10) && Rays.Count < maxRays)
             {
@@ -199,6 +204,10 @@ namespace InfernumMode.Content.Skies
                     LengthScalar = Main.rand.NextFloat(0.3f, 0.8f)
                 });
             }
+
+            while (Rays.Count > maxRays)
+                Rays.RemoveAt(0);
+
             // Draw the rays.
             foreach (Godray ray in Rays)
             {
@@ -257,7 +266,7 @@ namespace InfernumMode.Content.Skies
 
         private static void DrawFish()
         {
-            int maxBoids = 200;
+            int maxBoids = InfernumConfig.Instance.ReducedGraphicsConfig ? 90 : 180;
 
             // Spawn fishes.
             Rectangle spawnRectangle = new(50, 50, Main.screenWidth - 50, Main.screenHeight - 50);
@@ -268,16 +277,19 @@ namespace InfernumMode.Content.Skies
 
             Fishes.RemoveAll(f => f.Time >= f.Lifetime);
 
-            foreach (var Fish in Fishes)
+            while (Fishes.Count > maxBoids)
+                Fishes.RemoveAt(0);
+
+            foreach (var fish in Fishes)
             {
-                Fish.Update();
-                Fish.Draw();
+                fish.Update();
+                fish.Draw();
             }
         }
 
         private void DrawCinders(SpriteBatch spriteBatch, float minDepth, float maxDepth)
         {
-            float maxCinders = 240f;
+            int maxCinders = InfernumConfig.Instance.ReducedGraphicsConfig ?  120 : 240;
 
             // Randomly spawn cinders.
             if (Main.rand.NextBool(5) && Cinders.Count < maxCinders)
@@ -293,9 +305,12 @@ namespace InfernumMode.Content.Skies
                     RotationSpeed = Main.rand.NextFloat(0.003f, 0.006f) * Main.rand.NextFromList(-1, 1),
                     ColorLerpAmount = Main.rand.NextFloat(),
                     Depth = Main.rand.NextFloat(1.3f, 3f) * (downwards ? 0.8f : 1f),
-                    Bubble = Main.rand.NextBool(downwards ? 10 : 6)
+                    Bubble = Main.rand.NextBool(downwards ? 10 : 3)
                 });
             }
+
+            while (Cinders.Count > maxCinders)
+                Cinders.RemoveAt(0);
 
             Vector2 screenCenter = Main.screenPosition + new Vector2(Main.screenWidth * 0.5f, Main.screenHeight * 0.5f);
             Rectangle rectangle = new(-1000, -1000, 4000, 4000);

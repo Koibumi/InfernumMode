@@ -1,5 +1,4 @@
-﻿using InfernumMode.Common.Graphics.ScreenEffects;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Collections.Generic;
 using Terraria;
@@ -28,7 +27,7 @@ namespace InfernumMode.Common.Graphics
                 if (target is null || target.IsDisposed || target.WaitingForFirstInitialization)
                     continue;
 
-                ScreenSaturationBlurSystem.DrawActionQueue.Enqueue(() =>
+                Main.QueueMainThreadAction(() =>
                 {
                     target.Recreate((int)obj.X, (int)obj.Y);
                 });
@@ -48,12 +47,11 @@ namespace InfernumMode.Common.Graphics
             });
         }
 
-        public static RenderTarget2D CreateScreenSizedTarget(int screenWidth, int screenHeight) =>
-            new(Main.instance.GraphicsDevice, screenWidth, screenHeight, true, SurfaceFormat.Color, DepthFormat.Depth24, 2, RenderTargetUsage.DiscardContents);
+        // For some reason, adding more arguments to this constructor causes really low end pcs to crash. I cannot find out why, so do not use them.
+        public static RenderTarget2D CreateScreenSizedTarget(int screenWidth, int screenHeight) => new(Main.instance.GraphicsDevice, screenWidth, screenHeight);
 
         public override void OnModLoad()
         {
-            ManagedTargets = new();
             Main.OnPreDraw += HandleTargetUpdateLoop;
             Main.OnResolutionChanged += ResetTargetSizes;
         }
@@ -62,6 +60,7 @@ namespace InfernumMode.Common.Graphics
         {
             DisposeOfTargets();
             Main.OnPreDraw -= HandleTargetUpdateLoop;
+            Main.OnResolutionChanged -= ResetTargetSizes;
         }
 
         private void HandleTargetUpdateLoop(GameTime obj)

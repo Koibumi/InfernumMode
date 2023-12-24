@@ -1,18 +1,18 @@
 ﻿using CalamityMod;
 using CalamityMod.Items.SummonItems;
+using InfernumMode.Assets.Fonts;
 using InfernumMode.Content.Projectiles.Wayfinder;
 using InfernumMode.Core.GlobalInstances.Systems;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using ReLogic.Content;
-using ReLogic.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Terraria;
 using Terraria.Audio;
-using Terraria.GameContent;
 using Terraria.ID;
+using Terraria.Localization;
 using Terraria.ModLoader;
 
 namespace InfernumMode.Content.UI
@@ -28,10 +28,12 @@ namespace InfernumMode.Content.UI
         // If the player isn't within this range of the plaque, the UI will close.
         public static float DistanceThresholdToDrawUI => 100f;
 
-        public const string TextToDraw = "Three disciples. One mind. One deity. One purpose. Tempered by the holy flames of Providence, an ancient artifact is crystalized, with the sole purpose of initiating the Ritual at the cliff of this Temple.";
+        public static LocalizedText TextToDraw => Utilities.GetLocalization("UI.GuardiansPlaqueUI.PlaqueText");
 
         // The part of the TextToDraw should be drawn separately.
-        public const string SpecialText = "ancient artifact";
+        public static LocalizedText SpecialText => Utilities.GetLocalization("UI.GuardiansPlaqueUI.SpecialText");
+
+        public const string FieldName = "DrawPlaqueUI";
 
         public static float TextPadding => 30f;
 
@@ -48,20 +50,7 @@ namespace InfernumMode.Content.UI
 
         public static Vector2 PlaqueScale => Vector2.One;
 
-        public static bool ShouldDraw => Player.Infernum_UI().DrawPlaqueUI;
-
-        public static DynamicSpriteFont TextFont
-        {
-            get
-            {
-                // Historically Calamity received errors when attempting to load fonts on Linux systems for their MGRR boss HP bar.
-                // Out of an abundance of caution, Infernum implements the same solution as them and only uses the font on windows operating systems.
-                if (Environment.OSVersion.Platform == PlatformID.Win32NT)
-                    return InfernumMode.Instance.Assets.Request<DynamicSpriteFont>("Assets/Fonts/ProfanedText", AssetRequestMode.ImmediateLoad).Value;
-
-                return FontAssets.MouseText.Value;
-            }
-        }
+        public static bool ShouldDraw => Player.Infernum().GetValue<bool>(FieldName);
 
         public static void Draw(SpriteBatch spriteBatch)
         {
@@ -92,7 +81,9 @@ namespace InfernumMode.Content.UI
             // Draw the background behind the text.
             spriteBatch.Draw(BackgroundTexture, plaqueDrawCenter, null, Color.White * Opacity, 0f, BackgroundTexture.Size() * 0.5f, 1f, 0, 0f);
 
-            foreach (string line in Utils.WordwrapString(TextToDraw, TextFont, maxTextLength, 100, out _))
+            string specialTextValue = SpecialText.Value;
+
+            foreach (string line in Utils.WordwrapString(TextToDraw.Value, InfernumFontRegistry.ProfanedTextFont, maxTextLength, 100, out _))
             {
                 // If the line is undefined that means that the text has been exhausted, and we can safely leave this loop.
                 if (string.IsNullOrEmpty(line))
@@ -100,15 +91,15 @@ namespace InfernumMode.Content.UI
 
                 // Draw the line.
                 // If it contains the special line, draw it separately by splitting the surrounding lines.
-                if (line.Contains(SpecialText))
+                if (line.Contains(specialTextValue))
                 {
-                    List<string> splitLines = line.Split(SpecialText).ToList();
-                    splitLines.Insert(1, SpecialText);
+                    List<string> splitLines = line.Split(specialTextValue).ToList();
+                    splitLines.Insert(1, specialTextValue);
 
                     foreach (string line2 in splitLines)
                     {
                         DrawTextLine(line2, textLeftDrawPosition, spriteBatch);
-                        textLeftDrawPosition.X += TextFont.MeasureString(line2).X * TextScale;
+                        textLeftDrawPosition.X += InfernumFontRegistry.ProfanedTextFont.MeasureString(line2).X * TextScale;
                     }
                 }
                 else
@@ -123,9 +114,10 @@ namespace InfernumMode.Content.UI
         public static void DrawTextLine(string line, Vector2 textLeftDrawPosition, SpriteBatch spriteBatch)
         {
             Color textColor = WayfinderSymbol.Colors[0];
-            Vector2 textArea = TextFont.MeasureString(line) * TextScale;
+            Vector2 textArea = InfernumFontRegistry.ProfanedTextFont.MeasureString(line) * TextScale;
             Rectangle textRectangle = new((int)textLeftDrawPosition.X, (int)textLeftDrawPosition.Y + 5, (int)textArea.X, (int)(0.667f * textArea.Y));
-            if (line == SpecialText)
+
+            if (line == SpecialText.Value)
             {
                 textColor = CalamityUtils.ColorSwap(Color.HotPink, Color.Coral, 1.5f);
 
@@ -134,17 +126,17 @@ namespace InfernumMode.Content.UI
                 {
                     Player.noThrow = 2;
                     Main.HoverItem = new(ModContent.ItemType<ProfanedShard>());
-                    Main.hoverItemName = "Profaned Shard";
+                    Main.hoverItemName = Main.HoverItem.Name;
                 }
             }
 
-            Utils.DrawBorderStringFourWay(spriteBatch, TextFont, line, textLeftDrawPosition.X, textLeftDrawPosition.Y, textColor * Opacity, textColor * Opacity * 0.16f, Vector2.Zero, TextScale);
+            Utils.DrawBorderStringFourWay(spriteBatch, InfernumFontRegistry.ProfanedTextFont, line, textLeftDrawPosition.X, textLeftDrawPosition.Y, textColor * Opacity, textColor * Opacity * 0.16f, Vector2.Zero, TextScale);
         }
 
         public static void CloseUI()
         {
             SoundEngine.PlaySound(SoundID.MenuClose);
-            Player.Infernum_UI().DrawPlaqueUI = false;
+            Player.Infernum().SetValue<bool>(FieldName, false);
         }
     }
 }

@@ -25,7 +25,7 @@ namespace InfernumMode.Content.Rarities.Sparkles
             Position = position;
             Velocity = velocity;
             DrawColor = Color.Lerp(Color.Pink, Color.LightPink, Main.rand.NextFloat());
-            Texture = InfernumRarityHelper.SparkleTexure;
+            Texture = RarityTextureRegistry.BaseRaritySparkleTexture;
             Variant = Main.rand.Next(0, 7);
             Variant2 = Main.rand.Next(0, 7);
         }

@@ -15,6 +15,7 @@ using CalamityMod.Schematics;
 using CalamityMod.Systems;
 using CalamityMod.Tiles.Abyss;
 using InfernumMode.Assets.ExtraTextures;
+using InfernumMode.Common.DataStructures;
 using InfernumMode.Common.Graphics;
 using InfernumMode.Common.UtilityMethods;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.CeaselessVoid;
@@ -28,7 +29,6 @@ using InfernumMode.Content.Items.Accessories;
 using InfernumMode.Content.Projectiles.Generic;
 using InfernumMode.Content.Subworlds;
 using InfernumMode.Core.Balancing;
-using InfernumMode.Core.GlobalInstances.Players;
 using InfernumMode.Core.GlobalInstances.Systems;
 using InfernumMode.Core.Netcode;
 using InfernumMode.Core.Netcode.Packets;
@@ -54,6 +54,12 @@ namespace InfernumMode.Core.ILEditingStuff
 {
     public class NerfAdrenalineHook : IHookEdit
     {
+        internal static bool ShouldGetRipperDamageModifiers
+        {
+            get;
+            set;
+        }
+
         internal static void NerfAdrenalineRates(ILContext context)
         {
             ILCursor c = new(context);
@@ -68,7 +74,66 @@ namespace InfernumMode.Core.ILEditingStuff
             c.Emit(OpCodes.Div);
         }
 
+        internal static void ApplyRippersToDamageDetour(Orig_CalApplyRippersToDamageMethod orig, CalamityPlayer mp, bool trueMelee, ref float damageMult)
+        {
+            if (!InfernumMode.CanUseCustomAIs || ShouldGetRipperDamageModifiers)
+            {
+                orig(mp, trueMelee, ref damageMult);
+                return;
+            }
+        }
+
+        internal static void ModifyHitNPCWithItemDetour(Orig_CalModifyHitNPCWithItemMethod orig, CalamityPlayer self, Item item, NPC target, ref NPC.HitModifiers modifiers)
+        {
+            if (!InfernumMode.CanUseCustomAIs)
+            {
+                orig(self, item, target, ref modifiers);
+                return;
+            }
+
+            ShouldGetRipperDamageModifiers = false;
+            orig(self, item, target, ref modifiers);
+            ShouldGetRipperDamageModifiers = true;
+            float damageMult = 0f;
+            CalamityUtils.ApplyRippersToDamage(self, item.IsTrueMelee(), ref damageMult);
+            modifiers.SourceDamage += damageMult;
+        }
+
+        internal static void ModifyHitNPCWithProjDetour(Orig_CalModifyHitNPCWithProjMethod orig, CalamityPlayer self, Projectile proj, NPC target, ref NPC.HitModifiers modifiers)
+        {
+            if (!InfernumMode.CanUseCustomAIs)
+            {
+                orig(self, proj, target, ref modifiers);
+                return;
+            }
+
+            ShouldGetRipperDamageModifiers = false;
+            orig(self, proj, target, ref modifiers);
+            ShouldGetRipperDamageModifiers = true;
+            float damageMult = 0f;
+            CalamityUtils.ApplyRippersToDamage(self, proj.IsTrueMelee(), ref damageMult);
+            modifiers.SourceDamage += damageMult;
+        }
+
+        internal static float NerfAdrenDamageMethod(Orig_CalGetAdrenalineDamageMethod orig, CalamityPlayer mp)
+        {
+            if (!InfernumMode.CanUseCustomAIs)
+                return orig(mp);
+
+            float adrenalineBoost = BalancingChangesManager.AdrenalineDamageBoost;
+            
+            if (mp.adrenalineBoostOne)
+                adrenalineBoost += BalancingChangesManager.AdrenalineDamagePerBooster;
+            if (mp.adrenalineBoostTwo)
+                adrenalineBoost += BalancingChangesManager.AdrenalineDamagePerBooster;
+            if (mp.adrenalineBoostThree)
+                adrenalineBoost += BalancingChangesManager.AdrenalineDamagePerBooster;
+
+            return adrenalineBoost;
+        }
+
         public void Load() => UpdateRippers += NerfAdrenalineRates;
+
         public void Unload() => UpdateRippers -= NerfAdrenalineRates;
     }
 
@@ -77,7 +142,7 @@ namespace InfernumMode.Core.ILEditingStuff
         internal string RenameGSS(On_Lang.orig_GetNPCNameValue orig, int netID)
         {
             if (netID == ModContent.NPCType<GreatSandShark>() && InfernumMode.CanUseCustomAIs)
-                return GreatSandSharkBehaviorOverride.NewName;
+                return GreatSandSharkBehaviorOverride.NewName.Value;
 
             return orig(netID);
         }
@@ -361,16 +426,18 @@ namespace InfernumMode.Core.ILEditingStuff
                 return;
             }
 
+            Referenced<float> sealocketForcefieldOpacity = Main.LocalPlayer.Infernum().GetRefValue<float>("SealocketForcefieldOpacity");
+            Referenced<float> forcefieldDissipationInterpolant = Main.LocalPlayer.Infernum().GetRefValue<float>("SealocketForcefieldDissipationInterpolant");
+
             // Draw the render target, optionally with a dye shader.
             Main.spriteBatch.End();
             Main.spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Additive, SamplerState.LinearWrap, DepthStencilState.None, Main.Rasterizer);
 
-            float shieldScale = Main.LocalPlayer.GetModPlayer<SealocketPlayer>().ForcefieldOpacity * 0.3f;
+            float shieldScale = sealocketForcefieldOpacity.Value * 0.3f;
             Vector2 shieldSize = Vector2.One * shieldScale * 512f;
             Rectangle shaderArea = Utils.CenteredRectangle(PlayerForcefieldTarget.Target.Size(), shieldSize);
-            SealocketPlayer sealocketPlayer = Main.LocalPlayer.GetModPlayer<SealocketPlayer>();
-
-            if (sealocketPlayer.ForcefieldOpacity >= 0.01f && sealocketPlayer.ForcefieldDissipationInterpolant < 0.99f)
+            
+            if (sealocketForcefieldOpacity.Value >= 0.01f && forcefieldDissipationInterpolant.Value < 0.99f)
                 ForcefieldShader?.Apply(null, new(PlayerForcefieldTarget.Target, Vector2.Zero, shaderArea, Color.White));
             Main.spriteBatch.Draw(PlayerForcefieldTarget.Target, Main.LocalPlayer.Center - Main.screenPosition, null, Color.White, 0f, PlayerForcefieldTarget.Target.Size() * 0.5f, 1f, 0, 0f);
 
@@ -382,6 +449,9 @@ namespace InfernumMode.Core.ILEditingStuff
         private void PrepareSealocketTarget(On_Main.orig_CheckMonoliths orig)
         {
             orig();
+
+            if (Main.gameMenu)
+                return;
 
             var device = Main.instance.GraphicsDevice;
             RenderTargetBinding[] bindings = device.GetRenderTargets();
@@ -402,24 +472,23 @@ namespace InfernumMode.Core.ILEditingStuff
 
         public static void DrawForcefield(Player player)
         {
-            SealocketPlayer sealocketPlayer = player.GetModPlayer<SealocketPlayer>();
-            BrimstoneCrescentForcefieldPlayer crescentPlayer = player.GetModPlayer<BrimstoneCrescentForcefieldPlayer>();
-
-            sealocketPlayer.ForcefieldOpacity = 1f;
+            Referenced<float> sealocketForcefieldOpacity = player.Infernum().GetRefValue<float>("SealocketForcefieldOpacity");
+            Referenced<float> forcefieldDissipationInterpolant = player.Infernum().GetRefValue<float>("SealocketForcefieldDissipationInterpolant");
+            sealocketForcefieldOpacity.Value = 1f;
 
             // Draw the sealocket forcefield.
             Vector2 forcefieldDrawPosition = new Vector2(Main.screenWidth, Main.screenHeight) * 0.5f + Vector2.UnitY * player.gfxOffY;
-            if (sealocketPlayer.ForcefieldOpacity >= 0.01f && sealocketPlayer.ForcefieldDissipationInterpolant < 0.99f)
+            if (sealocketForcefieldOpacity.Value >= 0.01f && forcefieldDissipationInterpolant.Value < 0.99f)
             {
-                float forcefieldOpacity = (1f - sealocketPlayer.ForcefieldDissipationInterpolant) * sealocketPlayer.ForcefieldOpacity;
-                BereftVassal.DrawElectricShield(forcefieldOpacity, forcefieldDrawPosition, forcefieldOpacity, sealocketPlayer.ForcefieldDissipationInterpolant * 1.5f + 1.3f);
+                float forcefieldOpacity = (1f - forcefieldDissipationInterpolant.Value) * sealocketForcefieldOpacity.Value;
+                BereftVassal.DrawElectricShield(forcefieldOpacity, forcefieldDrawPosition, forcefieldOpacity, forcefieldDissipationInterpolant.Value * 1.5f + 1.3f);
             }
 
             // Draw the Brimstone Crescent forcefield.
-            if (crescentPlayer.ForcefieldStrengthInterpolant > 0f)
+            if (player.Infernum().GetValue<float>("BrimstoneCrescentForcefieldStrengthInterpolant") > 0f)
             {
-                float scale = Lerp(0.55f, 1.5f, 1f - crescentPlayer.ForcefieldStrengthInterpolant);
-                Color forcefieldColor = CalamityUtils.ColorSwap(Color.Lerp(Color.Red, Color.Yellow, 0.06f), Color.OrangeRed, 5f) * crescentPlayer.ForcefieldStrengthInterpolant;
+                float scale = Lerp(0.55f, 1.5f, 1f - player.Infernum().GetValue<float>("BrimstoneCrescentForcefieldStrengthInterpolant"));
+                Color forcefieldColor = CalamityUtils.ColorSwap(Color.Lerp(Color.Red, Color.Yellow, 0.06f), Color.OrangeRed, 5f) * player.Infernum().GetValue<float>("BrimstoneCrescentForcefieldStrengthInterpolant");
                 CultistBehaviorOverride.DrawForcefield(forcefieldDrawPosition, 1.35f, forcefieldColor, InfernumTextureRegistry.FireNoise.Value, true, scale);
             }
         }

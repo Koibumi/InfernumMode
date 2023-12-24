@@ -25,12 +25,6 @@ namespace InfernumMode.Core
         public bool ReducedGraphicsConfig { get; set; }
 
         [BackgroundColor(224, 127, 180, 192)]
-        [SliderColor(224, 165, 56, 128)]
-        [Range(0f, 1f)]
-        [DefaultValue(0f)]
-        public float SaturationBloomIntensity { get; set; }
-
-        [BackgroundColor(224, 127, 180, 192)]
         [DefaultValue(true)]
         public bool FlashbangOverlays { get; set; }
 
@@ -40,5 +34,4 @@ namespace InfernumMode.Core
 
         public override bool AcceptClientChanges(ModConfig pendingConfig, int whoAmI, ref NetworkText message) => false;
     }
-
 }

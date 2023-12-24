@@ -32,6 +32,7 @@ using Terraria.GameContent;
 using Terraria.Graphics.Effects;
 using Terraria.Graphics.Shaders;
 using Terraria.ID;
+using Terraria.Localization;
 using Terraria.ModLoader;
 using CalamitasShadowBoss = CalamityMod.NPCs.CalClone.CalamitasClone;
 using SCalBoss = CalamityMod.NPCs.SupremeCalamitas.SupremeCalamitas;
@@ -186,11 +187,11 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
 
         public static Color TextColor => Color.Lerp(Color.MediumPurple, Color.Black, 0.32f);
 
-        public const string CustomName = "Forgotten Shadow of Calamitas";
+        public static LocalizedText CustomName => Utilities.GetLocalization("NPCs.CalamitasShadowClone.DisplayName");
 
-        public const string CustomNameCataclysm = "Forgotten Shadow of Cataclysm";
+        public static LocalizedText CustomNameCataclysm => Utilities.GetLocalization("NPCs.CataclysmShadow.DisplayName");
 
-        public const string CustomNameCatastrophe = "Forgotten Shadow of Catastrophe";
+        public static LocalizedText CustomNameCatastrophe => Utilities.GetLocalization("NPCs.CatastropheShadow.DisplayName");
 
         public override bool PreAI(NPC npc)
         {
@@ -2021,18 +2022,16 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
                 Vector2 staffDrawPosition = armDrawPosition + (armRotation + Pi - PiOver2).ToRotationVector2() * npc.scale * 16f;
                 Vector2 staffEnd = armDrawPosition + (armRotation + Pi - PiOver2).ToRotationVector2() * npc.scale * 48f;
 
-                BloomLineDrawInfo lineInfo = new()
-                {
-                    LineRotation = -armRotation - PiOver2,
-                    WidthFactor = 0.004f + Pow(telegraphInterpolant, 4f) * (Sin(Main.GlobalTimeWrappedHourly * 3f) * 0.001f + 0.001f),
-                    BloomIntensity = Lerp(0.3f, 0.4f, telegraphInterpolant),
-                    Scale = Vector2.One * telegraphInterpolant * Clamp(npc.Distance(Main.player[npc.target].Center) * 3f, 10f, 3600f),
-                    MainColor = Color.Lerp(Color.HotPink, Color.Red, telegraphInterpolant * 0.9f + 0.1f),
-                    DarkerColor = Color.Orange,
-                    Opacity = Sqrt(telegraphInterpolant),
-                    BloomOpacity = 0.5f,
-                    LightStrength = 5f
-                };
+                BloomLineDrawInfo lineInfo = new(rotation: -armRotation - PiOver2,
+                    width: 0.004f + Pow(telegraphInterpolant, 4f) * (Sin(Main.GlobalTimeWrappedHourly * 3f) * 0.001f + 0.001f),
+                    bloom: Lerp(0.3f, 0.4f, telegraphInterpolant),
+                    scale: Vector2.One * telegraphInterpolant * Clamp(npc.Distance(Main.player[npc.target].Center) * 3f, 10f, 3600f),
+                    main: Color.Lerp(Color.HotPink, Color.Red, telegraphInterpolant * 0.9f + 0.1f),
+                    darker: Color.Orange,
+                    opacity: Sqrt(telegraphInterpolant),
+                    bloomOpacity: 0.5f,
+                    lightStrength: 5f);
+
                 Utilities.DrawBloomLineTelegraph(staffEnd, lineInfo);
 
                 Main.spriteBatch.Draw(staffTexture, staffDrawPosition, null, Color.White * npc.Opacity, staffRotation, staffTexture.Size() * Vector2.UnitY, npc.scale * 0.85f, 0, 0f);
@@ -2189,7 +2188,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
 
         public override bool CheckDead(NPC npc)
         {
-            if (npc.ai[0] != (int)CalShadowAttackType.DeathAnimation)
+            if ((npc.ai[0] != (int)CalShadowAttackType.DeathAnimation))
             {
                 // Delete all old projectiles.
                 Utilities.DeleteAllProjectiles(false, ModContent.ProjectileType<ArcingBrimstoneDart>(), ModContent.ProjectileType<DarkMagicFlame>());
@@ -2201,6 +2200,16 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.CalamitasShadow
                 npc.active = true;
                 npc.netUpdate = true;
             }
+
+            // Account for MP latency. This is 100% a problem for more things than just this but I really do not give a shit.
+            if (npc.ai[0] == (int)CalShadowAttackType.DeathAnimation && npc.ai[1] < 10)
+            {
+                npc.life = 1;
+                npc.dontTakeDamage = true;
+                npc.active = true;
+                npc.netUpdate = true;
+            }
+
             return false;
         }
         #endregion Death Effects

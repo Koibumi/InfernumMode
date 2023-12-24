@@ -57,6 +57,7 @@ namespace InfernumMode.Content.Tiles.Relics
 
         public override void SetStaticDefaults()
         {
+            RegisterItemDrop(DropItemID);
             Main.shine(Color.DarkRed, Type);
             Main.tileFrameImportant[Type] = true; // Any multitile requires this
             TileID.Sets.InteractibleByNPCs[Type] = true; // Town NPCs will palm their hand at this tile
@@ -112,6 +113,7 @@ namespace InfernumMode.Content.Tiles.Relics
                 Main.instance.TilesRenderer.AddSpecialLegacyPoint(i, j);
             }
         }
+
         public override void SpecialDraw(int i, int j, SpriteBatch spriteBatch)
         {
             // This is lighting-mode specific, always include this if you draw tiles manually

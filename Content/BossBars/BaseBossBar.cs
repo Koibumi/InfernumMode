@@ -5,6 +5,7 @@ using CalamityMod.NPCs.Yharon;
 using CalamityMod.Particles;
 using InfernumMode.Assets.Effects;
 using InfernumMode.Assets.ExtraTextures;
+using InfernumMode.Assets.Fonts;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.Yharon;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,6 +14,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Terraria;
 using Terraria.GameContent;
+using Terraria.GameInput;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.UI.Chat;
@@ -242,6 +244,12 @@ namespace InfernumMode.Content.BossBars
                 BossIcon = ModContent.Request<Texture2D>("CalamityMod/Items/Armor/Vanity/DraedonMask").Value;
             else if (AssociatedNPC.type == NPCID.MoonLordCore)
                 BossIcon = TextureAssets.NpcHeadBoss[8].Value;
+            else if (AssociatedNPC.type == NPCID.Golem)
+                BossIcon = TextureAssets.NpcHeadBoss[5].Value;
+
+            // Swap to the mod call icon if it exists.
+            if (ModCallBossIcons.TryGetValue(NPCType, out var icon))
+                BossIcon = icon;
 
             // Ensure there is the correct amount of indicators.
             int indicatorAmount = GetTotalPhaseIndicators();
@@ -267,7 +275,7 @@ namespace InfernumMode.Content.BossBars
         {
             float baseRatio = (float)CombinedNPCLife / CombinedNPCMaxLife;
             currentPhase = 1;
-            if (PhaseInfos.TryGetValue(NPCType, out BossPhaseInfo phaseInfo) && InfernumMode.CanUseCustomAIs)
+            if ((PhaseInfos.TryGetValue(NPCType, out BossPhaseInfo phaseInfo) && InfernumMode.CanUseCustomAIs) || ModCallPhaseInfos.TryGetValue(NPCType, out phaseInfo))
             {
                 float startingHealthPercentForPhase = 1f;
                 float endingHealthPercentForPhase = 0f;
@@ -277,7 +285,7 @@ namespace InfernumMode.Content.BossBars
 
                 if (NPCType == ModContent.NPCType<Yharon>())
                 {
-                    // This is already hardcoded so i dont care.
+                    // This is already hardcoded so I dont care.
                     phaseCount = 4;
                     if (!YharonBehaviorOverride.InSecondPhase)
                         phaseThresholds = new List<float> { phaseThresholds[0], phaseThresholds[1], phaseThresholds[2], phaseThresholds[3] };
@@ -327,7 +335,8 @@ namespace InfernumMode.Content.BossBars
 
         private int GetTotalPhaseIndicators()
         {
-            if (PhaseInfos.TryGetValue(NPCType, out BossPhaseInfo phaseInfo) && InfernumMode.CanUseCustomAIs)
+            // Isn't this AMAZING!? Deciding to make yharon (and any boss for that matter) regen HP was a bad idea for things like this.
+            if ((PhaseInfos.TryGetValue(NPCType, out BossPhaseInfo phaseInfo) && InfernumMode.CanUseCustomAIs) || ModCallPhaseInfos.TryGetValue(NPCType, out phaseInfo))
             {
                 if (phaseInfo.NPCType == ModContent.NPCType<Yharon>())
                     return phaseInfo.PhaseCount / 2;
@@ -361,7 +370,8 @@ namespace InfernumMode.Content.BossBars
             Color bloomColor = new(208, 47, 63);
 
             spriteBatch.End();
-            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.AlphaBlend, SamplerState.LinearWrap, DepthStencilState.None, Main.Rasterizer, null, Main.UIScaleMatrix);
+            PlayerInput.SetZoom_UI();
+            Main.spriteBatch.Begin(SpriteSortMode.Immediate, null, null, null, null, null, Main.UIScaleMatrix);
 
             Effect barShader = InfernumEffectsRegistry.BossBarShader.GetShader().Shader;
             barShader.Parameters["pixelationAmount"].SetValue(4f);
@@ -373,7 +383,7 @@ namespace InfernumMode.Content.BossBars
 
             spriteBatch.Draw(InfernumTextureRegistry.Pixel.Value, hpBarRightPos, null, drawColor, 0f, hpOrigin, hpScale, SpriteEffects.None, 0f);
             spriteBatch.End();
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, Main.DefaultSamplerState, DepthStencilState.None, Main.Rasterizer, null, Main.UIScaleMatrix);
+            spriteBatch.Begin(SpriteSortMode.Deferred, null, null, null, null, null, Main.UIScaleMatrix);
 
             // Draw the invincibility overlay.
             if ((InvincibilityTimer > 0 || IncreasingDefenseOrDRTimer > 0) && AssociatedNPC.type != NPCID.MoonLordCore)
@@ -401,7 +411,7 @@ namespace InfernumMode.Content.BossBars
             float actualIconSize = MathF.Max(BossIcon.Width, BossIcon.Height);
             float iconScaleNeeded = idealIconSize / actualIconSize;
 
-            // Provis is very wide.
+            // Provi is very wide.
             if (NPCType == ModContent.NPCType<Providence>())
                 iconScaleNeeded *= 1.55f;
 
@@ -464,9 +474,9 @@ namespace InfernumMode.Content.BossBars
             string percentText = formattedRatio.ToString() + "%";
             Vector2 textDrawPos = percentBaseDrawPos + new Vector2(16f, 6.5f);
             Color shadowColor = new(210, 158, 68);
-            Vector2 size = BarFont.MeasureString(percentText);
+            Vector2 size = InfernumFontRegistry.HPBarFont.MeasureString(percentText);
             Vector2 origin = new(size.X, size.Y * 0.5f);
-            ChatManager.DrawColorCodedString(spriteBatch, BarFont, percentText, textDrawPos, shadowColor * mainOpacity, 0f, origin, Vector2.One * 0.62f);
+            ChatManager.DrawColorCodedString(spriteBatch, InfernumFontRegistry.HPBarFont, percentText, textDrawPos, shadowColor * mainOpacity, 0f, origin, Vector2.One * 0.62f);
         }
         #endregion
     }

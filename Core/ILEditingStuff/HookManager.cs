@@ -17,13 +17,14 @@ using CalamityMod.Systems;
 using CalamityMod.UI.DraedonSummoning;
 using CalamityMod.UI.ModeIndicator;
 using CalamityMod.World;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Cil;
 using MonoMod.RuntimeDetour;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Terraria;
-using Terraria.GameContent.Events;
 using Terraria.ModLoader;
 
 namespace InfernumMode.Core.ILEditingStuff
@@ -466,6 +467,26 @@ namespace InfernumMode.Core.ILEditingStuff
         private static readonly MethodInfo CalPreAIMethod = typeof(CalamityGlobalNPC).GetMethod("PreAI", Utilities.UniversalBindingFlags);
 
         public delegate bool Orig_CalPreAIDelegate(CalamityGlobalNPC self, NPC npc);
+
+        private static readonly MethodInfo CalGetAdrenalineDamageMethod = typeof(CalamityUtils).GetMethod("GetAdrenalineDamage", Utilities.UniversalBindingFlags);
+
+        public delegate float Orig_CalGetAdrenalineDamageMethod(CalamityPlayer mp);
+
+        private static readonly MethodInfo CalApplyRippersToDamageMethod = typeof(CalamityUtils).GetMethod("ApplyRippersToDamage", Utilities.UniversalBindingFlags);
+
+        public delegate void Orig_CalApplyRippersToDamageMethod(CalamityPlayer mp, bool trueMelee, ref float damageMult);
+
+        private static readonly MethodInfo CalModifyHitNPCWithProjMethod = typeof(CalamityPlayer).GetMethod("ModifyHitNPCWithProj", Utilities.UniversalBindingFlags);
+
+        public delegate void Orig_CalModifyHitNPCWithProjMethod(CalamityPlayer self, Projectile proj, NPC target, ref NPC.HitModifiers modifiers);
+
+        private static readonly MethodInfo CalModifyHitNPCWithItemMethod = typeof(CalamityPlayer).GetMethod("ModifyHitNPCWithItem", Utilities.UniversalBindingFlags);
+
+        public delegate void Orig_CalModifyHitNPCWithItemMethod(CalamityPlayer self, Item item, NPC target, ref NPC.HitModifiers modifiers);
+
+        private static readonly MethodInfo CalGlobalNPCPredrawMethod = typeof(CalamityGlobalNPC).GetMethod("PreDraw", Utilities.UniversalBindingFlags);
+
+        public delegate bool Orig_CalGlobalNPCPredrawMethod(CalamityGlobalNPC self, NPC npc, SpriteBatch spriteBatch, Vector2 screenPos, Color drawColor);
 
         public static void FuckYou()
         {

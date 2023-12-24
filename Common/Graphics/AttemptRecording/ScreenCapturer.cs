@@ -29,6 +29,7 @@ namespace InfernumMode.Common.Graphics.AttemptRecording
             WoF,
             Calamitas,
             Vassal,
+            Moonlord,
             Provi,
             Draedon,
             SCal
@@ -353,6 +354,9 @@ namespace InfernumMode.Common.Graphics.AttemptRecording
 
             data = gZipMem.ToArray();
             fileStream.Write(data);
+
+            // Clear the frames.
+            ClearFrames();
         }
 
         internal static Texture2D[] LoadGifAsTexture2Ds(RecordingBoss bossFootageToLoad, out bool baseCreditsUsed)
@@ -457,6 +461,7 @@ namespace InfernumMode.Common.Graphics.AttemptRecording
                 RecordingBoss.Draedon => "Draedon",
                 RecordingBoss.Provi => "Providence",
                 RecordingBoss.Vassal => "Vassal",
+                RecordingBoss.Moonlord => "Moonlord",
                 RecordingBoss.Calamitas => "Calamitas",
                 RecordingBoss.WoF => "WallOfFlesh",
                 RecordingBoss.KingSlime => "KingSlime",

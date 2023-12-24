@@ -1,4 +1,5 @@
 ﻿using CalamityMod.Items;
+using InfernumMode.Content.Projectiles.Generic;
 using InfernumMode.Content.Rarities.InfernumRarities;
 using InfernumMode.Content.Rarities.Sparkles;
 using InfernumMode.Core.GlobalInstances.Players;
@@ -11,16 +12,31 @@ using Terraria.UI.Chat;
 
 namespace InfernumMode.Content.Items.Accessories
 {
+    // Dedicated to: Nyastra (Joey)
     public class SakuraBloom : ModItem
     {
-        private List<RaritySparkle> loveSparkles = new();
-        private List<RaritySparkle> memorySparkles = new();
+        private readonly List<RaritySparkle> LoveSparkles = new();
+        private readonly List<RaritySparkle> memorySparkles = new();
 
         public override void SetStaticDefaults()
         {
-            // DisplayName.SetDefault("Sakura Bloom");
-            // Tooltip.SetDefault("A symbol of how beautiful love is when in bloom, and how easily it can wither away whyyyy\nTemporary");
             Item.ResearchUnlockCount = 1;
+
+            InfernumPlayer.ResetEffectsEvent += (InfernumPlayer player) =>
+            {
+                player.SetValue<bool>("CreatingCherryBlossoms", false);
+            };
+
+            InfernumPlayer.PreUpdateEvent += (InfernumPlayer player) =>
+            {
+                // Create a bunch of blossoms.
+                if (!player.GetValue<bool>("CreatingCherryBlossoms") || Main.myPlayer != player.Player.whoAmI || !Main.rand.NextBool(4) || player.Player.dead)
+                    return;
+
+                Vector2 blossomSpawnPosition = player.Player.Center + new Vector2(Main.rand.NextFloatDirection() * 1000f, -600f);
+                Vector2 blossomVelocity = Vector2.UnitY.RotatedByRandom(1.23f) * Main.rand.NextFloat(0.3f, 4f);
+                Projectile.NewProjectile(player.Player.GetSource_FromThis(), blossomSpawnPosition, blossomVelocity, ModContent.ProjectileType<CherryBlossomPetal>(), 0, 0f, player.Player.whoAmI);
+            };
         }
 
         public override void SetDefaults()
@@ -35,32 +51,33 @@ namespace InfernumMode.Content.Items.Accessories
 
         public override bool PreDrawTooltipLine(DrawableTooltipLine line, ref int yOffset)
         {
-            loveSparkles.RemoveAll(s => s.Time >= s.Lifetime);
+            LoveSparkles.RemoveAll(s => s.Time >= s.Lifetime);
             memorySparkles.RemoveAll(s => s.Time >= s.Lifetime);
+
             if (line.Text.StartsWith("A symbol of how beautiful love is when in bloom, and how easily it can wither away"))
             {
                 Vector2 drawOffset = Vector2.UnitY * yOffset;
 
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "A symbol of how beautiful ");
+                drawOffset.X += DrawLine(line, drawOffset, LoveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.FirstText").Value);
 
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "love", true);
+                drawOffset.X += DrawLine(line, drawOffset, LoveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.SecondText").Value, true);
 
-                DrawLine(line, drawOffset, ref loveSparkles, " is when it’s in bloom, and yet how easily it can wither away");
+                DrawLine(line, drawOffset, LoveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.ThirdText").Value);
                 return false;
             }
             else if (line.Text == "Temporary")
             {
                 Vector2 drawOffset = Vector2.UnitY * yOffset;
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "Maybe with this, we can hold onto the ");
-                drawOffset.X += DrawLine(line, drawOffset, ref memorySparkles, "memories", true, 12);
-                drawOffset.X += DrawLine(line, drawOffset, ref loveSparkles, "?");
+                drawOffset.X += DrawLine(line, drawOffset, LoveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.FourthText").Value);
+                drawOffset.X += DrawLine(line, drawOffset, memorySparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.FifthText").Value, true, 12);
+                drawOffset.X += DrawLine(line, drawOffset, LoveSparkles, Utilities.GetLocalization("Items.SakuraBloom.TooltipEffect.SixthText").Value);
                 return false;
             }
 
             return true;
         }
 
-        public static float DrawLine(DrawableTooltipLine line, Vector2 drawOffset, ref List<RaritySparkle> sparkles, string overridingText = null, bool specialText = false, int spawnRate = 16, Color? overrideColor = null)
+        public static float DrawLine(DrawableTooltipLine line, Vector2 drawOffset, List<RaritySparkle> sparkles, string overridingText = null, bool specialText = false, int spawnRate = 16, Color? overrideColor = null)
         {
             Color textOuterColor = new(235, 195, 240);
             if (specialText)
@@ -116,8 +133,8 @@ namespace InfernumMode.Content.Items.Accessories
             return line.Font.MeasureString(text).X * line.BaseScale.X;
         }
 
-        public override void UpdateAccessory(Player player, bool hideVisual) => player.GetModPlayer<CherryBlossomPlayer>().CreatingCherryBlossoms = true;
+        public override void UpdateAccessory(Player player, bool hideVisual) => player.Infernum().SetValue<bool>("CreatingCherryBlossoms", true);
 
-        public override void UpdateVanity(Player player) => player.GetModPlayer<CherryBlossomPlayer>().CreatingCherryBlossoms = true;
+        public override void UpdateVanity(Player player) => player.Infernum().SetValue<bool>("CreatingCherryBlossoms", true);
     }
 }

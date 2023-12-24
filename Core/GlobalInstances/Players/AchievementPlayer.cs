@@ -1,4 +1,5 @@
-﻿using InfernumMode.Content.Achievements;
+﻿using CalamityMod.Events;
+using InfernumMode.Content.Achievements;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +65,13 @@ namespace InfernumMode.Core.GlobalInstances.Players
         {
             foreach (Achievement achievement in player.GetModPlayer<AchievementPlayer>().AchievementInstances)
             {
-                if (achievement.UpdateCheck == updateCheck)
+                bool shouldComplete = true;
+
+                // If boss rush is active, and the achivement isnt completable during it, dont complete it.
+                if (BossRushEvent.BossRushActive && !achievement.ObtainableDuringBossRush)
+                    shouldComplete = false;
+
+                if (shouldComplete && achievement.UpdateCheck == updateCheck)
                     achievement.ExtraUpdate(player, extraInfo);
             }
         }
@@ -120,7 +127,8 @@ namespace InfernumMode.Core.GlobalInstances.Players
                     achievement.DoneCompletionEffects = true;
                     achievement.OnCompletion(Player);
                 }
-                else if (!achievement.IsCompleted)
+                // If it isnt completed, or boss rush is not active or the achivement doesnt care about br, update it.
+                else if (!achievement.IsCompleted && (!BossRushEvent.BossRushActive || achievement.ObtainableDuringBossRush))
                     achievement.Update();
             }
             AchievementsNotificationTracker.Update();

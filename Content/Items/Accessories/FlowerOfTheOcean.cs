@@ -1,18 +1,32 @@
-﻿using CalamityMod.Items;
+﻿using CalamityMod;
+using CalamityMod.Items;
 using InfernumMode.Content.Rarities.InfernumRarities;
 using InfernumMode.Core.GlobalInstances.Players;
 using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
 
 namespace InfernumMode.Content.Items.Accessories
 {
-    internal class FlowerOfTheOcean : ModItem
+    // Dedicated to: LGL
+    public class FlowerOfTheOcean : ModItem
     {
         public override void SetStaticDefaults()
         {
             Item.ResearchUnlockCount = 1;
-            // DisplayName.SetDefault("Flower of the Ocean");
-            // Tooltip.SetDefault($"Grants vastly increased visibility while underwater");
+
+            InfernumPlayer.ResetEffectsEvent += (InfernumPlayer player) =>
+            {
+                player.SetValue<bool>("FlowerOceanMechanicsActive", false);
+                player.SetValue<bool>("FlowerOceanVisualsActive", false);
+            };
+
+            InfernumPlayer.AccessoryUpdateEvent += (InfernumPlayer player) =>
+            {
+                // If underwater and not in the last zone of the abyss.
+                if (player.Player.wet && !player.Player.Calamity().ZoneAbyssLayer4 && player.GetValue<bool>("FlowerOceanMechanicsActive"))
+                    Lighting.AddLight((int)(player.Player.Center.X / 16f), (int)(player.Player.Center.Y / 16f), TorchID.White, 20f);
+            };
         }
 
         public override void SetDefaults()
@@ -27,12 +41,10 @@ namespace InfernumMode.Content.Items.Accessories
 
         public override void UpdateAccessory(Player player, bool hideVisual)
         {
-            FlowerOceanPlayer modPlayer = player.GetModPlayer<FlowerOceanPlayer>();
-            modPlayer.MechanicsActive = true;
-            modPlayer.VisualsActive = !hideVisual;
+            player.Infernum().SetValue<bool>("FlowerOceanMechanicsActive", true);
+            player.Infernum().SetValue<bool>("FlowerOceanVisualsActive", !hideVisual);
         }
 
-        public override void UpdateVanity(Player player) =>
-            player.GetModPlayer<FlowerOceanPlayer>().VisualsActive = true;
+        public override void UpdateVanity(Player player) => player.Infernum().SetValue<bool>("FlowerOceanVisualsActive", true);
     }
 }

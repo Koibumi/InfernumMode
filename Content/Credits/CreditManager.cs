@@ -9,6 +9,7 @@ using Terraria;
 using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
+using Terraria.ModLoader.IO;
 
 namespace InfernumMode.Content.Credits
 {
@@ -40,9 +41,9 @@ namespace InfernumMode.Content.Credits
 
         private static CreditState CurrentState = CreditState.LoadingTextures;
 
-        private static readonly string[] Names = { Programmers, Musicians, Artists, Testers1, Testers2, Testers3, Testers4 };
+        private static readonly string[] Names = { Programmers, Musicians, Artists, Testers1, Testers2, Testers3, Testers4, Translators };
 
-        private static readonly string[] Headers = { "Programmers", "Musician", "Artists", "Testers", "Testers", "Testers", "Testers" };
+        private static readonly string[] Headers = { "Programmers", "Musician", "Artists", "Testers", "Testers", "Testers", "Testers", "Translators" };
 
         private static readonly Color[] HeaderColors =
         {
@@ -52,7 +53,8 @@ namespace InfernumMode.Content.Credits
             new(0, 148, 75),
             new(0, 148, 75),
             new(0, 148, 75),
-            new(0, 148, 75)
+            new(0, 148, 75),
+            new(246, 188, 49)
         };
 
         private static readonly ScreenCapturer.RecordingBoss[] Bosses =
@@ -61,6 +63,7 @@ namespace InfernumMode.Content.Credits
             ScreenCapturer.RecordingBoss.WoF,
             ScreenCapturer.RecordingBoss.Calamitas,
             ScreenCapturer.RecordingBoss.Vassal,
+            ScreenCapturer.RecordingBoss.Moonlord,
             ScreenCapturer.RecordingBoss.Provi,
             ScreenCapturer.RecordingBoss.Draedon,
             ScreenCapturer.RecordingBoss.SCal
@@ -85,7 +88,7 @@ namespace InfernumMode.Content.Credits
             }
         }
 
-        public const int TotalGIFs = 7;
+        public const int TotalGIFs = 8;
 
         public const string Artists = "Arix\nFreeman\nIbanPlay\nPengolin\nReika\nSpicySpaceSnake";
 
@@ -95,16 +98,28 @@ namespace InfernumMode.Content.Credits
 
         public const string Testers1 = "Blast\nBronze\nCata\nEin\nGamerXD";
 
-        public const string Testers2 = "Gonk\nIan\nJareto\nJoey\nLGL";
+        public const string Testers2 = "Gonk\nHabble\nIan\nJareto\nJoey";
 
-        public const string Testers3 = "Nutella\nMatthionine\nMyra\nPiky\nPurpleMattik";
+        public const string Testers3 = "LGL\nNutella\nMatthionine\nMyra\nPiky";
 
-        public const string Testers4 = "Smh\nShade\nShadine\nTeiull";
+        public const string Testers4 = "PurpleMattikSmh\nShade\nShadine\nTeiull";
+
+        public const string Translators = "Dimension Translate Group\nMyawk\nZavthenovakid";
 
         public override void Load()
         {
             Main.OnPreDraw += CreditFinalScene.PreparePortraitTarget;
             Main.OnPostDraw += DrawCredits;
+
+            InfernumPlayer.LoadDataEvent += (InfernumPlayer player, TagCompound tag) =>
+            {
+                player.SetValue<bool>("CreditsHavePlayed", tag.GetBool("CreditsHavePlayed"));
+            };
+
+            InfernumPlayer.SaveDataEvent += (InfernumPlayer player, TagCompound tag) =>
+            {
+                tag["CreditsHavePlayed"] = player.GetValue<bool>("CreditsHavePlayed");
+            };
         }
 
         public override void Unload()
@@ -131,7 +146,7 @@ namespace InfernumMode.Content.Credits
         public static void BeginCredits()
         {
             // Return if the credits are already playing, or have completed for this player.
-            if (CreditsPlaying || Main.LocalPlayer.GetModPlayer<CreditsPlayer>().CreditsHavePlayed)
+            if (CreditsPlaying)// || Main.LocalPlayer.Infernum().GetValue<bool>("CreditsHavePlayed"))
                 return;
 
             // Else, mark them as playing.
@@ -217,7 +232,8 @@ namespace InfernumMode.Content.Credits
 
                     if (CreditsTimer >= maxTime)
                     {
-                        Item.NewItem(new EntitySource_WorldEvent(), Main.LocalPlayer.Hitbox, ModContent.ItemType<CreditPainting>());
+                        if (Main.netMode != NetmodeID.Server)
+                            Main.LocalPlayer.QuickSpawnItem(new EntitySource_WorldEvent(), ModContent.ItemType<CreditPainting>());
                         CreditsTimer = 0;
                         CurrentState = CreditState.FinalizingDisposing;
                         return;
@@ -234,7 +250,7 @@ namespace InfernumMode.Content.Credits
                             CreditGIFs[ActiveGifIndex] = null;
                         }
                         // Mark the credits as completed.
-                        Main.LocalPlayer.GetModPlayer<CreditsPlayer>().CreditsHavePlayed = true;
+                        Main.LocalPlayer.Infernum().SetValue<bool>("CreditsHavePlayed", true);
                         CreditsPlaying = false;
                     }
                     break;

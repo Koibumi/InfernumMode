@@ -1,30 +1,28 @@
 ﻿using CalamityMod;
 using CalamityMod.Buffs.StatBuffs;
 using CalamityMod.Buffs.StatDebuffs;
-using CalamityMod.Events;
 using CalamityMod.NPCs;
 using CalamityMod.NPCs.AstrumAureus;
-using CalamityMod.NPCs.CeaselessVoid;
 using CalamityMod.NPCs.DevourerofGods;
 using CalamityMod.NPCs.ExoMechs;
 using CalamityMod.NPCs.GreatSandShark;
 using CalamityMod.NPCs.NormalNPCs;
-using CalamityMod.NPCs.PlaguebringerGoliath;
 using CalamityMod.NPCs.SupremeCalamitas;
 using CalamityMod.NPCs.Yharon;
 using CalamityMod.UI;
+using InfernumMode.Common.DataStructures;
 using InfernumMode.Common.Graphics.Primitives;
-using InfernumMode.Common.Graphics.ScreenEffects;
 using InfernumMode.Content.Achievements;
 using InfernumMode.Content.Achievements.InfernumAchievements;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.Cryogen;
 using InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians;
+using InfernumMode.Content.Cutscenes;
 using InfernumMode.Content.Items.SummonItems;
 using InfernumMode.Core.Balancing;
 using InfernumMode.Core.GlobalInstances.Players;
+using InfernumMode.Core.GlobalInstances.Systems;
 using InfernumMode.Core.OverridingSystem;
 using Microsoft.Xna.Framework;
-using System;
 using System.Linq;
 using Terraria;
 using Terraria.ID;
@@ -52,8 +50,6 @@ namespace InfernumMode.Core.GlobalInstances
         public int? TotalPlayersAtStart;
 
         public bool DisableNaturalDespawning;
-
-        public bool ShouldUseSaturationBlur;
 
         public bool IsAbyssPredator;
 
@@ -124,21 +120,14 @@ namespace InfernumMode.Core.GlobalInstances
                 ExtraAI[i] = 0f;
 
             var infernum = npc.Infernum();
-            infernum.ShouldUseSaturationBlur = false;
             infernum.IsAbyssPredator = false;
             infernum.IsAbyssPrey = false;
             infernum.HasResetHP = false;
             infernum.OptionalPrimitiveDrawer = null;
             infernum.Optional3DStripDrawer = null;
 
-            if (InfernumMode.CanUseCustomAIs)
-            {
-                //if (OverridingListManager.InfernumSetDefaultsOverrideList.TryGetValue(npc.type, out Delegate value))
-                //    value.DynamicInvoke(npc);
-
-                if (NPCBehaviorOverride.BehaviorOverrides.TryGetValue(npc.type, out var value))
-                    value.SetDefaults(npc);
-            }
+            if (InfernumMode.CanUseCustomAIs && NPCBehaviorOverride.BehaviorOverrides.TryGetValue(npc.type, out var value))
+                value.SetDefaults(npc);
         }
 
         public override void SetStaticDefaults()
@@ -148,9 +137,6 @@ namespace InfernumMode.Core.GlobalInstances
 
         public override bool PreAI(NPC npc)
         {
-            // Reset the saturation blur state.
-            npc.Infernum().ShouldUseSaturationBlur = false;
-
             // Initialize the amount of players the NPC had when it spawned.
             if (!npc.Infernum().TotalPlayersAtStart.HasValue)
             {
@@ -206,8 +192,6 @@ namespace InfernumMode.Core.GlobalInstances
                     npc.netOffset = Vector2.Zero;
 
                     bool result = value.PreAI(npc);
-                    if (npc.Infernum().ShouldUseSaturationBlur && !BossRushEvent.BossRushActive)
-                        ScreenSaturationBlurSystem.ShouldEffectBeActive = true;
 
                     // Disable the effects of certain unpredictable freeze debuffs.
                     // Time Bolt and a few other weapon-specific debuffs are not counted here since those are more deliberate weapon mechanics.
@@ -241,6 +225,20 @@ namespace InfernumMode.Core.GlobalInstances
                 if (npc.boss || KillAllMinibossesAchievement.MinibossIDs.Contains(npc.type))
                     AchievementPlayer.ExtraUpdateHandler(player, AchievementUpdateCheck.NPCKill, npc.whoAmI);
             }
+
+            // Check for whether to play the post mechs cutscene.
+            if (!WorldSaveSystem.HasSeenPostMechsCutscene)
+            {
+                // If Prime was just killed, and the other two are also dead.
+                if (npc.type == NPCID.SkeletronPrime && NPC.downedMechBoss1 && NPC.downedMechBoss2)
+                    CutsceneManager.QueueCutscene(ModContent.GetInstance<DraedonPostMechsCutscene>());
+                // If Destroyer was just killed, and the other two are dead.
+                else if (npc.type == NPCID.TheDestroyer && NPC.downedMechBoss2 && NPC.downedMechBoss3)
+                    CutsceneManager.QueueCutscene(ModContent.GetInstance<DraedonPostMechsCutscene>());
+                // If Twins were just killed, and the other two are dead.
+                else if ((npc.type == NPCID.Retinazer || npc.type == NPCID.Spazmatism) && NPC.downedMechBoss1 && NPC.downedMechBoss3)
+                    CutsceneManager.QueueCutscene(ModContent.GetInstance<DraedonPostMechsCutscene>());
+            }
         }
 
         public override bool CanHitPlayer(NPC npc, Player target, ref int cooldownSlot)
@@ -248,8 +246,12 @@ namespace InfernumMode.Core.GlobalInstances
             if (!InfernumMode.CanUseCustomAIs)
                 return base.CanHitPlayer(npc, target, ref cooldownSlot);
 
+            // Exceptions that do not have behavior overrides but exist in the fight still.
             bool isSepulcher = npc.type == ModContent.NPCType<SepulcherHead>() || npc.type == ModContent.NPCType<SepulcherBody>() || npc.type == ModContent.NPCType<SepulcherBodyEnergyBall>() || npc.type == ModContent.NPCType<SepulcherTail>();
-            if (npc.type == NPCID.KingSlime || npc.type == NPCID.Plantera || npc.type == ModContent.NPCType<PlaguebringerGoliath>() || npc.type == ModContent.NPCType<DarkEnergy>() || isSepulcher)
+            bool isWofNPC = npc.type is NPCID.LeechHead or NPCID.LeechBody or NPCID.LeechTail or NPCID.TheHungry or NPCID.TheHungryII;
+            bool isBee = (npc.type is NPCID.Bee or NPCID.BeeSmall) && NPC.AnyNPCs(NPCID.QueenBee);
+
+            if ((NPCBehaviorOverride.BehaviorOverrides.TryGetValue(npc.type, out var value) && value.UseBossImmunityCooldownID) || isSepulcher || isWofNPC || isBee)
                 cooldownSlot = ImmunityCooldownID.Bosses;
 
             if (npc.type == ModContent.NPCType<DevourerofGodsBody>() && OverridingListManager.Registered<DevourerofGodsHead>())
@@ -288,16 +290,17 @@ namespace InfernumMode.Core.GlobalInstances
             // The reason the loop is necessary is because simply invoking the event and returning the result will only give back the result for the
             // last subscriber called, effectively ignoring whatever all the other subscribers say should happen.
             bool result = true;
-            foreach (Delegate d in StrikeNPCEvent.GetInvocationList())
-                result &= ((StrikeNPCDelegate)d).Invoke(npc, ref modifiers);
+            foreach (StrikeNPCDelegate d in StrikeNPCEvent.GetInvocationList().Cast<StrikeNPCDelegate>())
+                result &= d.Invoke(npc, ref modifiers);
         }
 
         public override void ModifyHitByProjectile(NPC npc, Projectile projectile, ref NPC.HitModifiers modifiers)
         {
-            if (!InfernumMode.CanUseCustomAIs)
-                return;
+            if (InfernumMode.CanUseCustomAIs)
+                BalancingChangesManager.ApplyFromProjectile(npc, ref modifiers, projectile);
 
-            BalancingChangesManager.ApplyFromProjectile(npc, ref modifiers, projectile);
+            foreach (ModifyHitByProjectileDelegate subscription in ModifyHitByProjectileEvent.GetInvocationList().Cast<ModifyHitByProjectileDelegate>())
+                subscription.Invoke(npc, projectile, ref modifiers);
         }
 
         public override bool CheckDead(NPC npc)
@@ -321,10 +324,11 @@ namespace InfernumMode.Core.GlobalInstances
 
         public override void OnChatButtonClicked(NPC npc, bool firstButton)
         {
-            if (npc.type == NPCID.OldMan && firstButton && InfernumMode.CanUseCustomAIs && !Main.LocalPlayer.GetModPlayer<SkeletronSummonerGiftPlayer>().WasGivenDungeonsCurse)
+            Referenced<bool> wasGivenDungeonsCurse = Main.LocalPlayer.Infernum().GetRefValue<bool>("WasGivenDungeonsCurse");
+            if (npc.type == NPCID.OldMan && firstButton && InfernumMode.CanUseCustomAIs && !wasGivenDungeonsCurse.Value)
             {
                 Item.NewItem(npc.GetSource_FromThis(), Main.LocalPlayer.Hitbox, ModContent.ItemType<DungeonsCurse>());
-                Main.LocalPlayer.GetModPlayer<SkeletronSummonerGiftPlayer>().WasGivenDungeonsCurse = true;
+                wasGivenDungeonsCurse.Value = true;
             }
         }
         #endregion

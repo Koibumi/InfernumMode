@@ -29,7 +29,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
 
         public override void SetDefaults()
         {
-            // These get changed later, but are this be default.
+            // These get changed later, but are this by default.
             base.SetDefaults();
             Projectile.Opacity = 0;
             Projectile.timeLeft = Lifetime;
@@ -39,6 +39,17 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
         {
             if (!Owner.active || Owner.type != ModContent.NPCType<ProfanedGuardianDefender>())
             {
+                // Client's may not recognize their owner immediately, give it a bit of time.
+                if (Main.netMode == NetmodeID.MultiplayerClient)
+                {
+                    Projectile.timeLeft -= 40;
+                    if (Projectile.timeLeft < 50)
+                    {
+                        Projectile.Kill();
+                    }
+                    return;
+                }
+
                 Projectile.Kill();
                 return;
             }
@@ -85,7 +96,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                 GeneralParticleHandler.SpawnParticle(rockParticle);
                 Projectile.rotation -= 0.1f;
                 if (Main.rand.NextBool() && Main.netMode != NetmodeID.Server)
-                    ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticles(ModContent.Request<Texture2D>(Texture).Value.CreateMetaballsFromTexture(Projectile.Center - Projectile.velocity * 0.5f, 0f, Projectile.scale * 0.8f, 15f, 170));
+                    ModContent.GetInstance<ProfanedLavaMetaball>().SpawnParticles(ModContent.Request<Texture2D>(Texture).Value.CreateMetaballsFromTexture(Projectile.Center - Projectile.velocity * 0.5f, 0f, Projectile.scale * 0.8f, 15f, 170, 0.9f));
             }
         }
 
@@ -108,7 +119,7 @@ namespace InfernumMode.Content.BehaviorOverrides.BossAIs.ProfanedGuardians
                 laserScopeEffect.Parameters["Resolution"].SetValue(new Vector2(340f));
                 Player target = Main.player[Owner.target];
                 laserScopeEffect.Parameters["laserAngle"].SetValue((target.Center - Projectile.Center).ToRotation() * -1f);
-                laserScopeEffect.Parameters["laserWidth"].SetValue(0.0025f + Pow(opacity, 5f) * (Sin(Main.GlobalTimeWrappedHourly * 3f) * 0.002f + 0.002f));
+                laserScopeEffect.Parameters["laserWidth"].SetValue(0.0025f + Pow(opacity, 5f) * (Sin(Main.GlobalTimeWrappedHourly * 3f) * 0.001f + 0.002f));
                 laserScopeEffect.Parameters["laserLightStrenght"].SetValue(3f);
                 laserScopeEffect.Parameters["color"].SetValue(Color.Lerp(WayfinderSymbol.Colors[1], Color.OrangeRed, 0.5f).ToVector3());
                 laserScopeEffect.Parameters["darkerColor"].SetValue(WayfinderSymbol.Colors[2].ToVector3());
