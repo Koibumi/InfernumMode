@@ -1268,8 +1268,8 @@ Mods: {
 				DisplayName: 唤海符石
 				Tooltip:
 					'''
-					在深渊底层召唤成年幻海妖龙
-					此乃原初之神创造的远古神器，其可用于召唤一个幽灵守卫
+					在深渊底层召唤始源妖龙
+					据说这是原初之神所创造的远古神器，其可用于召唤一个幽灵守卫
 					不消耗
 					'''
 			}
@@ -1511,7 +1511,7 @@ Mods: {
 			}
 
 			Perditus: {
-				DisplayName: 标记且潮湿
+				DisplayName: 失落长汐
 				Tooltip:
 					'''
 					{$CommonItemTooltip.SummonTagDamage}
@@ -1525,14 +1525,14 @@ Mods: {
 				Tooltip:
 					'''
 					左键发射一支长矛，当击中目标时碎裂。它将会变为一块环绕着你的岩石，一次最多储存6块
-					            右键发射长矛周围所有的岩石。岩石数量为3块时，左键攻击将会追踪敌人。数量为6块时，所有岩石都会追踪敌人
+					右键发射长矛周围所有的岩石。岩石数量为3块时，左键攻击将会追踪敌人。数量为6块时，所有岩石都会追踪敌人
 					[c/ffbf49:一把秽色之矛，仅能从她那最为虔诚、最为强大的追随者身上找到]
 					'''
 			}
 
 			ProfanedTempleBackgroundWall: {
-				// DisplayName: Profaned Temple Background Wall
-				// Tooltip: ""
+				DisplayName: 亵渎神庙背景墙
+				Tooltip: ""
 			}
 		}
 
