@@ -650,12 +650,12 @@ Mods: {
 				TextToDisplay:
 					'''
 					忠诚护卫
-					重生之龙 亚戎
+					重生之龙 犽戎
 					'''
 				JokeTextToDisplay:
 					'''
 					超级无敌大大大的
-					重生之龙 亚戎
+					重生之龙 犽戎
 					'''
 			}
 		}
@@ -1439,7 +1439,7 @@ Mods: {
 			}
 
 			NuclearTerrorRelic: {
-				DisplayName: 辐核骇兽孽狱圣物
+				DisplayName: 辐核骇兽炼狱圣物
 				Tooltip: ""
 			}
 
