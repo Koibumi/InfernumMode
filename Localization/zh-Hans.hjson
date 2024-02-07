@@ -575,12 +575,12 @@ Mods: {
 				TextToDisplay:
 					'''
 					圣洁之焰
-					亵渎天神 普罗维登斯
+					普罗维登斯
 					'''
 				EnragedTextToDisplay:
 					'''
 					赦罪之焰
-					亵渎天神 普罗维登斯
+					普罗维登斯
 					'''
 			}
 
@@ -602,12 +602,12 @@ Mods: {
 			SCalIntroScreen.TextToDisplay:
 				'''
 				硫火女巫
-				至尊灾厄
+				灾厄
 				'''
 			SignusIntroScreen.TextToDisplay:
 				'''
 				鬼魅刺客
-				神之使徒西格纳斯
+				西格纳斯
 				'''
 			SkeletronIntroScreen.TextToDisplay:
 				'''
@@ -650,12 +650,12 @@ Mods: {
 				TextToDisplay:
 					'''
 					忠诚护卫
-					重生之龙 犽戎
+					犽戎
 					'''
 				JokeTextToDisplay:
 					'''
 					超级无敌大大大的
-					重生之龙 犽戎
+					犽戎
 					'''
 			}
 		}
