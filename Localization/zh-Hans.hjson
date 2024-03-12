@@ -1872,8 +1872,8 @@ Mods: {
 			SulphuricGas.DisplayName: 硫酸气体
 			SulphuricGasDebuff.DisplayName: 硫酸气体
 			SulphuricTornado.DisplayName: 硫酸龙卷
-			SulphurousRockRubble.DisplayName: 硫酸泡泡
-			WaterClearingBubble.DisplayName: 酸性气泡
+			SulphurousRockRubble.DisplayName: 硫石碎块
+			WaterClearingBubble.DisplayName: 净水气泡
 			AstralBlueComet.DisplayName: 星辉彗星
 			AstralLaserInfernum.DisplayName: 星界激光
 			AstralMissile.DisplayName: 星辉导弹
