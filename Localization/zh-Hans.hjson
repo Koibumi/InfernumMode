@@ -156,7 +156,7 @@ Mods: {
 				}
 
 				TabletWish: {
-					DisplayName: 纯洁无暇
+					DisplayName: 纯洁无瑕
 					Description:
 						'''
 						不是所有的野兽都是怪物
@@ -1524,8 +1524,8 @@ Mods: {
 				DisplayName: 焱
 				Tooltip:
 					'''
-					左键发射一支长矛，当击中目标时碎裂。它将会变为一块环绕着你的岩石，一次最多储存6块
-					右键发射长矛周围所有的岩石。岩石数量为3块时，左键攻击将会追踪敌人。数量为6块时，所有岩石都会追踪敌人
+					左键发射一支长矛，当击中目标时碎裂，并重组为一块环绕着你的岩石，一次最多储存6块
+					右键与长矛一并发射周围所有的岩石。岩石数量达到3块时，左键攻击将会追踪敌人；达到6块时，岩石也会追踪敌人
 					[c/ffbf49:一把秽色之矛，仅能从她那最为虔诚、最为强大的追随者身上找到]
 					'''
 			}
@@ -1634,7 +1634,7 @@ Mods: {
 			AsterBossSpawn7: 咳，这将易如反掌!
 			AsterBossSpawn8: 勇往直前，我的骄傲。
 			AsterBossSpawn9: 给我展示一手，大人物。
-			AsterBossSpawn10: 记住，坠落也是一种躲避方法！
+			AsterBossSpawn10: 记住，放弃也是一个选择！
 			AsterPet1: 嘿,现在……
 			AsterPet2: 嗯？
 			AsterPet3: 喜欢!
@@ -1680,7 +1680,7 @@ Mods: {
 			CryogenJokeTip2: 这东西可毫无寒意！
 			CryogenBlizzardTip: 极光之灵正在从暴风雪中夹击你，往侧面跑的时候要小心！
 			CultistTip1: 那家伙可真是个疯子，你也许需要额外的机动性！
-			CultistIceBurstTip: 试着在冰雪雾爆炸之前钻进这些线里！
+			CultistIceBurstTip: 你要提前找好冰块爆炸后真正的空隙！
 			CultistLightningTip: 闪电会瞄准你的前方！试着诱导它的位置！
 			DeerclopsTip1: 独眼巨鹿是个大近视，因此它会不断逼近你，不要让它把你逼入绝境！
 			DeerclopsTip2: 独眼巨鹿有固定的攻击模式，研究它们的行为，然后用放风筝打法！
@@ -1726,7 +1726,7 @@ Mods: {
 			EoWTip2: 如果世界吞噬者减速移动，跟它做同样的事，不然你可能会撞到魔刺上！
 			EoWRainTip: 吞噬者们将要生成雨云时会减速飞走！注意这一点并规划好空间。
 			EoWJokeTip1: 我猜它吃的不仅仅是世界……
-			EoCTip1: 待在那些尖牙球附近！这些牙齿会瞄准的很远！
+			EoCTip1: 待在那些尖牙球附近！这些牙齿会瞄准的是远处！
 			EoCTip2: 别费心去杀克苏鲁之仆了，还没等你打死它们，它们就飞走了！
 			EoCJokeTip1: 这又是哪只眼睛的盲点？
 			EoCJokeTip2: 哎呀！我的眼睛好痛……
@@ -1734,7 +1734,7 @@ Mods: {
 			GolemTip2: 如果你觉得踩到平台太难了，你可以钩在墙上重置飞行时间！
 			GolemJokeTip1: 你将会有一段坏时光......
 			HiveMindTip1: 如果你想了解对手的移动行为，可以利用它们的前摇来占上风！
-			HiveMindTip2: 试着远离腐巢意志来拉开与雨云的距离，这可以让你的战斗场地更干净！
+			HiveMindTip2: 试着朝着腐巢意志奔跑从而将雨云推开，这会让你的战斗场地更干净！
 			HiveMindTip3: 如果你攻击腐巢意志，它会提前开始下一次攻击；等它冷却完了再开火！
 			HiveMindFinalPhaseTip: 还没完吗？！
 			HiveMindJokeTip1: 那没啥用，但是别担心！我的意志十分坚定！
